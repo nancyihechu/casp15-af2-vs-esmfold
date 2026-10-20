@@ -35,3 +35,6 @@ results/**/*_scores_rank_00[2-5]_*.json
 
 # Domain-trimmed copies of predictions made by the evaluate step (rebuilt on every run)
 results/**/eval/
+
+# Slurm job bookkeeping of pipeline.py
+results/**/.jobs/

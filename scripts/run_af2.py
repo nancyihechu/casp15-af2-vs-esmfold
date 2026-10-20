@@ -28,6 +28,12 @@ FLAGS = ["--model-type", "alphafold2_ptm", "--num-models", "5", "--num-recycle",
          "--random-seed", "0", "--rank", "plddt", "--data", WEIGHTS]
 
 
+def gpu_name():
+    out = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                         capture_output=True, text=True)
+    return out.stdout.strip().splitlines()[0] if out.returncode == 0 and out.stdout.strip() else ""
+
+
 def run_depth(tid, depth_dir, keep_all_models=False):
     a3m = depth_dir / f"{tid}.a3m"
     # clear outputs from an earlier attempt, keep the input MSA
@@ -76,7 +82,7 @@ def run_depth(tid, depth_dir, keep_all_models=False):
                # by the median of the other four to estimate folding time without compilation
                "fold_time_no_compile_s": round(5 * float(np.median(
                    [m["time_s"] for m in models if not m["model"].startswith("alphafold2_ptm_model_1_")])), 2),
-               "colabfold_wall_time_s": round(wall, 2),
+               "colabfold_wall_time_s": round(wall, 2), "gpu": gpu_name(),
                "timing_note": "fold_time_s = sum of the 5 per-model times in log.txt "
                               "(model_1 includes JAX compilation); fold_time_no_compile_s = "
                               "5 x median time of models 2-5; colabfold_wall_time_s also "

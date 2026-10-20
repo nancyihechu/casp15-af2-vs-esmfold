@@ -1,0 +1,6 @@
+model,tm_full_msa,tm_depth_1,difference
+alphafold2_ptm_model_1,0.353,0.3021,0.0509
+alphafold2_ptm_model_2,0.3446,0.2233,0.1213
+alphafold2_ptm_model_3,0.3937,0.2917,0.102
+alphafold2_ptm_model_4,0.4121,0.378,0.0341
+alphafold2_ptm_model_5,0.498,0.3672,0.1308

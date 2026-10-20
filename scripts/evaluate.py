@@ -108,6 +108,7 @@ def main():
         print(f"{tid} ESMFold: TM {s['tm_score']:.3f}", flush=True)
 
         for run in sorted((tdir / "af2_all_models").glob("depth_*")):
+            gpu = json.loads((run / "summary.json").read_text()).get("gpu", "")
             for pdb in sorted(run.glob(f"{tid}_unrelaxed_rank_*.pdb")):
                 rank = int(re.search(r"rank_(\d+)", pdb.name).group(1))
                 model = re.search(r"(alphafold2_ptm_model_\d)", pdb.name).group(1)
@@ -117,7 +118,7 @@ def main():
                                    "rank": rank, "model": model,
                                    **{k: s[k] for k in ("tm_score", "gdt_ts", "rmsd", "lddt")},
                                    "mean_plddt": domain_plddt(scores["plddt"], start, end),
-                                   "ptm": scores["ptm"]})
+                                   "ptm": scores["ptm"], "gpu": gpu})
             print(f"{tid} all 5 AF2 models scored for {run.name}", flush=True)
 
     # sanity checks: every number in a sensible range

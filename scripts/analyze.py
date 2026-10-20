@@ -41,6 +41,8 @@ PAE_CMAP = LinearSegmentedColormap.from_list(  # sequential blue: dark = low err
     "pae", ["#0d366b", "#1c5cab", "#3987e5", "#86b6ef", "#cde2fb", "#fcfcfb"])
 PLDDT_BANDS = [(90, 101, "0x0053D6"), (70, 90, "0x65CBF3"), (50, 70, "0xFFDB13"), (0, 50, "0xFF7D45")]
 SMALL_N_NOTE = "n = 6 targets: |rho| >= 0.89 is needed for p < 0.05"
+# A TM-score margin this small counts as a tie (one seed, one MSA subsample per depth)
+TIE_TM = 0.01
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
@@ -150,9 +152,26 @@ def table_smallest_msa(d):
                        stays_at_or_above_for_larger_msa=bool((larger.tm_score >= esm_tm).all()))
         below = af2[af2.tm_score < esm_tm]
         row["largest_n_sequences_below_esmfold"] = int(below.n_sequences.max()) if len(below) else np.nan
+        full_margin = row["af2_full_tm"] - esm_tm
+        row["full_msa_margin_tm"] = full_margin
+        row["full_msa_verdict"] = ("tie" if abs(full_margin) <= TIE_TM else
+                                   "AF2 better" if full_margin > 0 else "ESMFold better")
         row["note"] = d["notes"][tid]
         rows.append(row)
     return write_table(d, pd.DataFrame(rows), "smallest_msa_matching_esmfold.csv")
+
+
+def table_noise(d):
+    """TM-score differences between runs with identical inputs (duplicate depth runs vs kept run)."""
+    msa = pd.read_csv(d["cfg"]["tables_dir"] / "msa_depths.csv", dtype={"msa_depth": str, "duplicate_of": str})
+    af2 = d["runs"][d["runs"].method == "AF2"].set_index(["target", "msa_depth"])
+    rows = [{"target": r.target, "msa_depth": r.msa_depth, "same_input_as": r.duplicate_of,
+             "tm_score": af2.loc[(r.target, r.msa_depth), "tm_score"],
+             "tm_score_kept_run": af2.loc[(r.target, r.duplicate_of), "tm_score"]}
+            for r in msa[msa.is_duplicate_depth].itertuples()]
+    df = pd.DataFrame(rows)
+    df["abs_diff"] = (df.tm_score - df.tm_score_kept_run).abs()
+    return write_table(d, df, "duplicate_run_noise.csv")
 
 
 def table_perplexity(d):
@@ -220,6 +239,18 @@ def table_t1122_models(d):
     return write_table(d, df, "t1122_all_models.csv")
 
 
+def table_t1122_paired(d):
+    """Same AF2 model (weights 1-5) with and without the duplicate MSA row."""
+    df = table_t1122_models(d)
+    if df is None:
+        return None
+    wide = df.pivot(index="model", columns="msa_depth", values="tm_score")
+    out = pd.DataFrame({"model": wide.index, "tm_full_msa": wide["full"].values,
+                        "tm_depth_1": wide["1"].values})
+    out["difference"] = out.tm_full_msa - out.tm_depth_1
+    return write_table(d, out, "t1122_paired_models.csv")
+
+
 # ---------------------------------------------------------------------- figures
 
 def fig1(d, x="n_sequences", name="fig1_tm_vs_n_sequences.png", xlabel="Sequences in MSA (log scale)"):
@@ -237,14 +268,15 @@ def fig1(d, x="n_sequences", name="fig1_tm_vs_n_sequences.png", xlabel="Sequence
             p = af2[af2.n_sequences == s.smallest_n_sequences].iloc[0]
             ax.plot(p[x], p.tm_score, "o", ms=15, mfc="none", mec=INK, mew=1.5)
             n = int(p.n_sequences)
+            verb = "ties" if s.margin_tm <= TIE_TM else "\u2265"
             if n == af2.n_sequences.min():
-                msg = "AF2 \u2265 ESMFold at every MSA size"
+                msg = f"AF2 {verb} ESMFold at every MSA size"
             elif n == af2.n_sequences.max():
-                msg = f"AF2 \u2265 ESMFold only with the full MSA ({n} seq.)"
+                msg = f"AF2 {verb} ESMFold only with the full MSA ({n} seq.)"
             elif s.stays_at_or_above_for_larger_msa:
-                msg = f"AF2 \u2265 ESMFold from {n} seq. up (ring)"
+                msg = f"AF2 {verb} ESMFold from {n} seq. up (ring)"
             else:
-                msg = f"AF2 \u2265 ESMFold first at {n} seq. (ring)"
+                msg = f"AF2 {verb} ESMFold first at {n} seq. (ring)"
         ax.text(0.97, 0.04, msg, transform=ax.transAxes, ha="right", fontsize=8.5, color=INK2,
                 bbox={"facecolor": SURFACE, "edgecolor": "none", "pad": 1.5})
         ax.set_xscale("log")
@@ -473,6 +505,69 @@ def md_table(df, digits=None):
     return "\n".join(lines)
 
 
+def findings_md(d):
+    """Key findings as sentences; every number is computed from the tables."""
+    name = {t: short_note(d, t) for t in d["order"]}
+    join = lambda ts: ", ".join(name[t] for t in ts) or "none"  # noqa: E731
+    sm = table_smallest_msa(d)
+    depth1 = d["runs"][(d["runs"].method == "AF2") & (d["runs"].msa_depth == "1")].set_index("target")
+    below1 = [t for t in d["order"] if depth1.loc[t, "tm_score"] < d["esm"].loc[t, "tm_score"]]
+    few = sm[(sm.smallest_n_sequences > 1) & (sm.smallest_n_sequences <= 16)]
+    sp = table_spearman(d).set_index(["x", "y"])
+    ppl = table_perplexity(d)
+    top_ppl = set(ppl.nlargest(2, "pseudo_perplexity_full").target)
+    hard = {m: set(ppl.nsmallest(2, c).target) for m, c in (("ESMFold", "esmfold_tm"), ("AF2", "af2_full_tm"))}
+    quad = table_confidence_quadrants(d).set_index("method")
+    speed = table_speed(d)
+    lines = [
+        "**Key findings** (generated from the tables below)", "",
+        f"- **MSA depth (Q1).** With a single sequence, AF2 is below ESMFold on {len(below1)} of "
+        f"{len(d['order'])} targets ({join(below1)}). A few sequences close the gap: AF2 reaches "
+        f"ESMFold's TM-score with {', '.join(f'{int(r.smallest_n_sequences)} ({name[r.target]})' for r in few.itertuples())} "
+        "sequences"
+        + "".join(f"; {name[r.target]} reaches it only with its full MSA ({int(r.smallest_n_sequences)} sequences)"
+                  for r in sm[sm.smallest_n_sequences > 16].itertuples())
+        + "".join(f"; {name[r.target]} is above ESMFold even with 1 sequence"
+                  for r in sm[sm.smallest_n_sequences == 1].itertuples())
+        + ". With the full MSA, AF2 is clearly better on "
+        f"{join(sm[sm.full_msa_verdict == 'AF2 better'].target)} and ties ESMFold (margin of {TIE_TM} TM or "
+        f"less) on {join(sm[sm.full_msa_verdict == 'tie'].target)}"
+        + (f"; ESMFold is better on {join(sm[sm.full_msa_verdict == 'ESMFold better'].target)}" if
+           (sm.full_msa_verdict == "ESMFold better").any() else "") + ".",
+        f"- **Perplexity (Q2).** Higher ESM-2 pseudo-perplexity goes with lower accuracy, but not "
+        f"significantly: rho = {sp.loc[('pseudo_perplexity_full', 'esmfold_tm'), 'rho']:.2f} for ESMFold "
+        f"(p = {sp.loc[('pseudo_perplexity_full', 'esmfold_tm'), 'p_exact']:.2f}) and "
+        f"{sp.loc[('pseudo_perplexity_full', 'af2_full_tm'), 'rho']:.2f} for AF2 "
+        f"(p = {sp.loc[('pseudo_perplexity_full', 'af2_full_tm'), 'p_exact']:.2f}), n = {len(ppl)}. "
+        f"The two highest-perplexity targets ({join(sorted(top_ppl, key=d['order'].index))}) are "
+        + ("the two hardest for both methods." if top_ppl == hard["ESMFold"] == hard["AF2"] else
+           f"{'' if top_ppl == hard['ESMFold'] else 'not '}the two hardest for ESMFold and "
+           f"{'' if top_ppl == hard['AF2'] else 'not '}the two hardest for AF2."),
+        f"- **Confidence.** Neither method was confident but wrong (mean pLDDT >= 70 with TM < 0.5): "
+        f"{quad.loc['AF2', 'confident_but_wrong']} of {quad.loc['AF2', 'runs']} AF2 runs, "
+        f"{quad.loc['ESMFold', 'confident_but_wrong']} of {quad.loc['ESMFold', 'runs']} ESMFold runs. "
+        f"ESMFold's pLDDT ranks the targets by accuracy with rho = "
+        f"{sp.loc[('mean_plddt [ESMFold]', 'tm_score'), 'rho']:.2f}.",
+        f"- **Speed (Q3).** ESMFold took {speed.esmfold_time_s.min():.1f}-{speed.esmfold_time_s.max():.1f} s "
+        f"per target; AF2 took {speed.af2_total_time_s.min():.0f}-{speed.af2_total_time_s.max():.0f} s "
+        f"(MSA search + 5 models), i.e. {speed.speedup_total.min():.1f}-{speed.speedup_total.max():.1f}x "
+        f"longer in total, or {speed.speedup_per_model.min():.1f}-{speed.speedup_per_model.max():.1f}x per "
+        f"model. The accuracy given up with ESMFold ranges from {speed.tm_lost_with_esmfold.min():.3f} to "
+        f"{speed.tm_lost_with_esmfold.max():.3f} TM, depending on the target.",
+    ]
+    paired = table_t1122_paired(d)
+    if paired is not None:
+        lines.append(
+            f"- **T1122, the near-single-sequence case.** Its \"full MSA\" is the query plus an identical "
+            f"copy, yet it beats AF2 on the query alone for {int((paired.difference > 0).sum())} of "
+            f"{len(paired)} model weights (mean {paired.difference.mean():+.3f} TM), so this is not ranking "
+            "luck. The extra row changes AF2's input features without adding any evolutionary information. "
+            "On the query alone AF2 is "
+            + ("below" if depth1.loc["T1122", "tm_score"] < d["esm"].loc["T1122", "tm_score"] else "at or above")
+            + " ESMFold.")
+    return "\n".join(lines)
+
+
 def summary_md(d):
     """All numbers for the README, taken from the pipeline's own tables."""
     runs, af2_full, esm = d["runs"], d["af2_full"], d["esm"]
@@ -498,7 +593,9 @@ def summary_md(d):
         "target": [name[t] for t in sm.target], "ESMFold TM": sm.esmfold_tm,
         "smallest MSA with AF2 >= ESMFold (seqs)": sm.smallest_n_sequences.map(lambda v: "" if np.isnan(v) else int(v)),
         "Neff/L there": sm.smallest_neff_per_L, "AF2 TM there": sm.af2_tm_there,
-        "margin (TM)": sm.margin_tm, "AF2 stays >= ESMFold with more seqs": sm.stays_at_or_above_for_larger_msa})
+        "margin (TM)": sm.margin_tm, "AF2 stays >= ESMFold with more seqs": sm.stays_at_or_above_for_larger_msa,
+        "full MSA: AF2 - ESMFold (TM)": sm.full_msa_margin_tm, "full MSA verdict": sm.full_msa_verdict})
+    noise = table_noise(d)
 
     sp = table_spearman(d)
     sp = sp[sp.n == 6][["x", "y", "rho", "p_exact"]].rename(columns={"p_exact": "exact p (n = 6)"})
@@ -519,10 +616,17 @@ def summary_md(d):
     if pc is not None:
         pc["n_sequences"] = pc.n_sequences.map(lambda v: "" if pd.isna(v) else int(v))
     out = ["<!-- This block is generated by scripts/analyze.py from results/tables/*.csv. Do not edit. -->",
+           findings_md(d), "",
            "### Main results (FM domain; AF2 = top-ranked of 5 models)", md_table(main, dig), "",
            "### Smallest MSA where AF2 is at or above ESMFold (TM-score)",
-           "Duplicate depth runs left out. Differences below about 0.01 TM are within run-to-run noise.",
+           f"Duplicate depth runs left out. A margin of {TIE_TM} TM or less counts as a tie: there is one "
+           f"seed and one MSA subsample per depth, and runs with identical inputs already differ by up to "
+           f"{noise.abs_diff.max():.4f} TM ({len(noise)} duplicate runs, "
+           "`results/tables/duplicate_run_noise.csv`).",
            md_table(small), "",
+           "Full-MSA verdicts: " + "; ".join(
+               f"{name[r.target]}: {r.full_msa_verdict} ({r.full_msa_margin_tm:+.3f})" for r in sm.itertuples()) + ".",
+           "",
            "### ESM-2 perplexity vs accuracy (Spearman, exact permutation p)",
            f"{SMALL_N_NOTE}.", md_table(sp), "",
            "### Confidence vs accuracy (AF2: non-duplicate depth runs)", md_table(quad), "",
@@ -539,9 +643,20 @@ def summary_md(d):
                          {"gdt_ts": 1, "mean_plddt": 1}), ""]
     t1122 = table_t1122_models(d)
     if t1122 is not None:
-        out += ["### T1122: all 5 AF2 models (reruns that keep every model)",
+        paired = table_t1122_paired(d)
+        top = t1122[t1122["rank"] == 1].set_index("msa_depth")
+        gpu_diff = (top.tm_score - top.original_run_rank1_tm).abs().max()
+        out += ["### T1122: all 5 AF2 models, full MSA (query + identical copy) vs depth 1",
+                f"Reruns on {t1122.gpu.iloc[0]} that keep every model. The top models reproduce the "
+                f"original L40S runs to within {gpu_diff:.4f} TM, so GPU type does not change the result.",
                 md_table(t1122[["msa_depth", "rank", "model", "tm_score", "lddt", "mean_plddt",
-                                "original_run_rank1_tm"]], {"mean_plddt": 1}), ""]
+                                "original_run_rank1_tm"]], {"mean_plddt": 1}), "",
+                "Same model weights, with vs without the duplicate row:",
+                md_table(paired), "",
+                f"The duplicate row raises the TM-score of {int((paired.difference > 0).sum())} of "
+                f"{len(paired)} models (mean change {paired.difference.mean():+.3f}; mean TM "
+                f"{paired.tm_full_msa.mean():.3f} vs {paired.tm_depth_1.mean():.3f}). The top-ranked model "
+                f"is the same weights ({top.loc['full', 'model']}) in both runs.", ""]
     text = "\n".join(out)
     (d["cfg"]["results_dir"] / "summary.md").write_text(text + "\n")
     return text
@@ -560,8 +675,8 @@ def update_readme(d):
     return readme
 
 
-TABLES = [table_smallest_msa, table_perplexity, table_spearman, table_confidence_quadrants,
-          table_speed, table_t1122_models]
+TABLES = [table_noise, table_smallest_msa, table_perplexity, table_spearman, table_confidence_quadrants,
+          table_speed, table_t1122_models, table_t1122_paired]
 FIGURES = [fig1, fig1b, fig2, fig3, fig4, fig5, fig6, figS1]
 
 

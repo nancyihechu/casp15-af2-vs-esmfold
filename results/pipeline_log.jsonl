@@ -1,0 +1,14 @@
+{"step": "evaluate", "status": "ok", "message": "all_runs.csv: 48 rows OK", "seconds": 150.9, "time": "2026-10-20 17:47:59", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 78.2, "time": "2026-10-20 17:49:18", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 36.0, "time": "2026-10-20 17:50:14", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 36.4, "time": "2026-10-20 17:51:19", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 36.1, "time": "2026-10-20 17:52:04", "config": "config/targets.yaml"}
+{"step": "collect", "status": "ok", "message": "6 sequences and natives OK", "seconds": 1.9, "time": "2026-10-20 17:52:35", "config": "config/targets.yaml"}
+{"step": "msa", "status": "ok", "message": "MSAs OK (T1104:94, T1122:3, T1159:173, T1187:3508, T1194:21, T1113:8)", "seconds": 0.1, "time": "2026-10-20 17:52:37", "config": "config/targets.yaml"}
+{"step": "sweep", "status": "ok", "message": "skipped: AF2 already ran on these depth files (use --force, then af2 --force)", "seconds": 0.0, "time": "2026-10-20 17:52:39", "config": "config/targets.yaml"}
+{"step": "af2", "status": "ok", "message": "42 AF2 runs OK (already complete)", "seconds": 0.0, "time": "2026-10-20 17:52:40", "config": "config/targets.yaml"}
+{"step": "esmfold", "status": "ok", "message": "6 ESMFold runs OK (already complete)", "seconds": 0.0, "time": "2026-10-20 17:52:42", "config": "config/targets.yaml"}
+{"step": "perplexity", "status": "ok", "message": "6 perplexities OK (already complete)", "seconds": 0.0, "time": "2026-10-20 17:52:45", "config": "config/targets.yaml"}
+{"step": "evaluate", "status": "ok", "message": "all_runs.csv: 48 rows OK", "seconds": 140.3, "time": "2026-10-20 17:55:07", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 36.1, "time": "2026-10-20 17:55:47", "config": "config/targets.yaml"}
+{"step": "report", "status": "ok", "message": "wrote results/report.md", "seconds": 0.0, "time": "2026-10-20 17:55:52", "config": "config/targets.yaml"}

@@ -1,0 +1,70 @@
+{
+  "target": "T1122",
+  "depth": "1",
+  "n_sequences": 1,
+  "top_model_pdb": "T1122_unrelaxed_rank_001_alphafold2_ptm_model_5_seed_000.pdb",
+  "top_model": "alphafold2_ptm_model_5_seed_000",
+  "mean_plddt": 45.01995850622407,
+  "ptm": 0.43,
+  "fold_time_s": 48.8,
+  "fold_time_no_compile_s": 17.0,
+  "colabfold_wall_time_s": 61.14,
+  "timing_note": "fold_time_s = sum of the 5 per-model times in log.txt (model_1 includes JAX compilation); fold_time_no_compile_s = 5 x median time of models 2-5; colabfold_wall_time_s also includes weight loading",
+  "flags": [
+    "--model-type",
+    "alphafold2_ptm",
+    "--num-models",
+    "5",
+    "--num-recycle",
+    "3",
+    "--random-seed",
+    "0",
+    "--rank",
+    "plddt",
+    "--data",
+    "/cluster/pixstor/dkhf3-lab/users/nancy/colabfold_weights"
+  ],
+  "models": [
+    {
+      "rank": 1,
+      "model": "alphafold2_ptm_model_5_seed_000",
+      "scores_file": "T1122_scores_rank_001_alphafold2_ptm_model_5_seed_000.json",
+      "mean_plddt": 45.01995850622407,
+      "ptm": 0.43,
+      "time_s": 3.4
+    },
+    {
+      "rank": 2,
+      "model": "alphafold2_ptm_model_4_seed_000",
+      "scores_file": "T1122_scores_rank_002_alphafold2_ptm_model_4_seed_000.json",
+      "mean_plddt": 40.931576763485474,
+      "ptm": 0.38,
+      "time_s": 3.4
+    },
+    {
+      "rank": 3,
+      "model": "alphafold2_ptm_model_1_seed_000",
+      "scores_file": "T1122_scores_rank_003_alphafold2_ptm_model_1_seed_000.json",
+      "mean_plddt": 36.57078838174274,
+      "ptm": 0.3,
+      "time_s": 35.2
+    },
+    {
+      "rank": 4,
+      "model": "alphafold2_ptm_model_2_seed_000",
+      "scores_file": "T1122_scores_rank_004_alphafold2_ptm_model_2_seed_000.json",
+      "mean_plddt": 36.413692946058084,
+      "ptm": 0.26,
+      "time_s": 3.4
+    },
+    {
+      "rank": 5,
+      "model": "alphafold2_ptm_model_3_seed_000",
+      "scores_file": "T1122_scores_rank_005_alphafold2_ptm_model_3_seed_000.json",
+      "mean_plddt": 32.94319502074689,
+      "ptm": 0.21,
+      "time_s": 3.4
+    }
+  ],
+  "gpu": "NVIDIA A100 80GB PCIe"
+}
