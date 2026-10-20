@@ -1,0 +1,11 @@
+{
+  "target": "T1113",
+  "length": 193,
+  "pdb": "T1113_esmfold.pdb",
+  "mean_plddt": 33.02544021606445,
+  "ptm": 0.19709078967571259,
+  "fold_time_s": 1.325,
+  "model_load_time_s": 21.93,
+  "gpu": "NVIDIA L40S",
+  "timing_note": "fold_time_s = model.infer() only, after one warm-up fold"
+}

@@ -1,0 +1,43 @@
+2026-10-20 16:14:00,309 Running colabfold 1.5.5
+2026-10-20 16:14:00,514 Unable to initialize backend 'rocm': module 'jaxlib.xla_extension' has no attribute 'GpuAllocatorConfig'
+2026-10-20 16:14:00,515 Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+2026-10-20 16:14:02,907 Running on GPU
+2026-10-20 16:14:03,018 Found 5 citations for tools or databases
+2026-10-20 16:14:03,018 Query 1/1: T1159 (length 160)
+2026-10-20 16:14:03,307 Setting max_seq=32, max_extra_seq=1
+2026-10-20 16:14:36,045 alphafold2_ptm_model_1_seed_000 recycle=0 pLDDT=86.8 pTM=0.839
+2026-10-20 16:14:36,429 alphafold2_ptm_model_1_seed_000 recycle=1 pLDDT=93.4 pTM=0.896 tol=1.12
+2026-10-20 16:14:36,805 alphafold2_ptm_model_1_seed_000 recycle=2 pLDDT=93.4 pTM=0.895 tol=0.618
+2026-10-20 16:14:37,190 alphafold2_ptm_model_1_seed_000 recycle=3 pLDDT=94.5 pTM=0.898 tol=0.457
+2026-10-20 16:14:37,190 alphafold2_ptm_model_1_seed_000 took 27.3s (3 recycles)
+2026-10-20 16:14:37,591 alphafold2_ptm_model_2_seed_000 recycle=0 pLDDT=88.3 pTM=0.867
+2026-10-20 16:14:37,972 alphafold2_ptm_model_2_seed_000 recycle=1 pLDDT=91.5 pTM=0.89 tol=0.663
+2026-10-20 16:14:38,350 alphafold2_ptm_model_2_seed_000 recycle=2 pLDDT=94 pTM=0.901 tol=0.452
+2026-10-20 16:14:38,734 alphafold2_ptm_model_2_seed_000 recycle=3 pLDDT=95.9 pTM=0.91 tol=0.0894
+2026-10-20 16:14:38,734 alphafold2_ptm_model_2_seed_000 took 1.5s (3 recycles)
+2026-10-20 16:14:39,132 alphafold2_ptm_model_3_seed_000 recycle=0 pLDDT=90.4 pTM=0.875
+2026-10-20 16:14:39,520 alphafold2_ptm_model_3_seed_000 recycle=1 pLDDT=96.1 pTM=0.911 tol=0.511
+2026-10-20 16:14:39,905 alphafold2_ptm_model_3_seed_000 recycle=2 pLDDT=96.5 pTM=0.914 tol=0.113
+2026-10-20 16:14:40,293 alphafold2_ptm_model_3_seed_000 recycle=3 pLDDT=96.6 pTM=0.914 tol=0.029
+2026-10-20 16:14:40,293 alphafold2_ptm_model_3_seed_000 took 1.5s (3 recycles)
+2026-10-20 16:14:40,690 alphafold2_ptm_model_4_seed_000 recycle=0 pLDDT=88.8 pTM=0.857
+2026-10-20 16:14:41,076 alphafold2_ptm_model_4_seed_000 recycle=1 pLDDT=95.9 pTM=0.911 tol=0.671
+2026-10-20 16:14:41,465 alphafold2_ptm_model_4_seed_000 recycle=2 pLDDT=96.5 pTM=0.915 tol=0.139
+2026-10-20 16:14:41,854 alphafold2_ptm_model_4_seed_000 recycle=3 pLDDT=96.6 pTM=0.914 tol=0.0449
+2026-10-20 16:14:41,855 alphafold2_ptm_model_4_seed_000 took 1.5s (3 recycles)
+2026-10-20 16:14:42,262 alphafold2_ptm_model_5_seed_000 recycle=0 pLDDT=91.6 pTM=0.889
+2026-10-20 16:14:42,658 alphafold2_ptm_model_5_seed_000 recycle=1 pLDDT=96.9 pTM=0.919 tol=0.32
+2026-10-20 16:14:43,053 alphafold2_ptm_model_5_seed_000 recycle=2 pLDDT=97.2 pTM=0.92 tol=0.0739
+2026-10-20 16:14:43,449 alphafold2_ptm_model_5_seed_000 recycle=3 pLDDT=97.3 pTM=0.92 tol=0.0283
+2026-10-20 16:14:43,449 alphafold2_ptm_model_5_seed_000 took 1.6s (3 recycles)
+2026-10-20 16:14:43,475 reranking models by 'plddt' metric
+2026-10-20 16:14:43,475 rank_001_alphafold2_ptm_model_5_seed_000 pLDDT=97.3 pTM=0.92
+2026-10-20 16:14:43,476 rank_002_alphafold2_ptm_model_4_seed_000 pLDDT=96.6 pTM=0.914
+2026-10-20 16:14:43,476 rank_003_alphafold2_ptm_model_3_seed_000 pLDDT=96.6 pTM=0.914
+2026-10-20 16:14:43,477 rank_004_alphafold2_ptm_model_2_seed_000 pLDDT=95.9 pTM=0.91
+2026-10-20 16:14:43,477 rank_005_alphafold2_ptm_model_1_seed_000 pLDDT=94.5 pTM=0.898
+2026-10-20 16:14:44,194 Done
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792530840.816091 2526446 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792530842.302871 2526446 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.

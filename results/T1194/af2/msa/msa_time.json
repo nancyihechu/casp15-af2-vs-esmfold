@@ -1,0 +1,6 @@
+{
+  "target": "T1194",
+  "msa_time_s": 5.84,
+  "n_sequences": 21,
+  "server": "ColabFold MMseqs2 (UniRef + environmental), no templates"
+}

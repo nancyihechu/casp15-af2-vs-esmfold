@@ -1,0 +1,11 @@
+{
+  "target": "T1194",
+  "length": 168,
+  "pdb": "T1194_esmfold.pdb",
+  "mean_plddt": 84.920654296875,
+  "ptm": 0.8233723044395447,
+  "fold_time_s": 0.812,
+  "model_load_time_s": 21.93,
+  "gpu": "NVIDIA L40S",
+  "timing_note": "fold_time_s = model.infer() only, after one warm-up fold"
+}

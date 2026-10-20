@@ -1,0 +1,69 @@
+{
+  "target": "T1104",
+  "depth": "128",
+  "n_sequences": 93,
+  "top_model_pdb": "T1104_unrelaxed_rank_001_alphafold2_ptm_model_2_seed_000.pdb",
+  "top_model": "alphafold2_ptm_model_2_seed_000",
+  "mean_plddt": 87.27726495726495,
+  "ptm": 0.81,
+  "fold_time_s": 42.5,
+  "fold_time_no_compile_s": 7.0,
+  "colabfold_wall_time_s": 55.94,
+  "timing_note": "fold_time_s = sum of the 5 per-model times in log.txt (model_1 includes JAX compilation); fold_time_no_compile_s = 5 x median time of models 2-5; colabfold_wall_time_s also includes weight loading",
+  "flags": [
+    "--model-type",
+    "alphafold2_ptm",
+    "--num-models",
+    "5",
+    "--num-recycle",
+    "3",
+    "--random-seed",
+    "0",
+    "--rank",
+    "plddt",
+    "--data",
+    "/cluster/pixstor/dkhf3-lab/users/nancy/colabfold_weights"
+  ],
+  "models": [
+    {
+      "rank": 1,
+      "model": "alphafold2_ptm_model_2_seed_000",
+      "scores_file": "T1104_scores_rank_001_alphafold2_ptm_model_2_seed_000.json",
+      "mean_plddt": 87.27726495726495,
+      "ptm": 0.81,
+      "time_s": 1.4
+    },
+    {
+      "rank": 2,
+      "model": "alphafold2_ptm_model_4_seed_000",
+      "scores_file": "T1104_scores_rank_002_alphafold2_ptm_model_4_seed_000.json",
+      "mean_plddt": 85.79811965811969,
+      "ptm": 0.81,
+      "time_s": 1.4
+    },
+    {
+      "rank": 3,
+      "model": "alphafold2_ptm_model_1_seed_000",
+      "scores_file": "T1104_scores_rank_003_alphafold2_ptm_model_1_seed_000.json",
+      "mean_plddt": 83.35247863247865,
+      "ptm": 0.8,
+      "time_s": 36.9
+    },
+    {
+      "rank": 4,
+      "model": "alphafold2_ptm_model_5_seed_000",
+      "scores_file": "T1104_scores_rank_004_alphafold2_ptm_model_5_seed_000.json",
+      "mean_plddt": 82.8882905982906,
+      "ptm": 0.8,
+      "time_s": 1.4
+    },
+    {
+      "rank": 5,
+      "model": "alphafold2_ptm_model_3_seed_000",
+      "scores_file": "T1104_scores_rank_005_alphafold2_ptm_model_3_seed_000.json",
+      "mean_plddt": 78.63145299145299,
+      "ptm": 0.75,
+      "time_s": 1.4
+    }
+  ]
+}

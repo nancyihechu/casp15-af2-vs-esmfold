@@ -1,0 +1,11 @@
+{
+  "target": "T1122",
+  "length": 241,
+  "pdb": "T1122_esmfold.pdb",
+  "mean_plddt": 47.45304489135742,
+  "ptm": 0.4725637435913086,
+  "fold_time_s": 2.442,
+  "model_load_time_s": 21.93,
+  "gpu": "NVIDIA L40S",
+  "timing_note": "fold_time_s = model.infer() only, after one warm-up fold"
+}
