@@ -1,0 +1,3 @@
+method,runs,confident_and_right,confident_but_wrong,unsure_but_right,unsure_and_wrong,rule
+AF2,28,20,0,2,6,confident = mean pLDDT >= 70; right = TM-score >= 0.5
+ESMFold,6,3,0,1,2,confident = mean pLDDT >= 70; right = TM-score >= 0.5

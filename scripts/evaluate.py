@@ -13,6 +13,11 @@ Timing columns:
   time_per_model_s fold_time_s / number of models (5 for AF2, 1 for ESMFold)
   total_time_s     AF2: msa_time_s + fold_time_s; ESMFold: fold_time_s
 
+Also writes results/<target>/superposition/ (native domain, AF2 full-MSA model and ESMFold
+model, both moved onto the native with TMscore's superposition) for Figure 4, and, when
+results/<target>/af2_all_models/ exists (reruns that keep all 5 AF2 models), scores every
+model there into results/tables/af2_all_models.csv.
+
 Needs results/tables/msa_depths.csv (scripts/msa_stats.py).
 Writes results/tables/all_runs.csv and results/<target>/eval/ (trimmed domain models).
 """
@@ -21,6 +26,8 @@ import argparse
 import csv
 import json
 import math
+import re
+import shutil
 import sys
 
 import numpy as np
@@ -47,7 +54,7 @@ def main():
     with open(cfg["tables_dir"] / "msa_depths.csv") as f:
         msa = {(r["target"], r["msa_depth"]): r for r in csv.DictReader(f)}
 
-    rows = []
+    rows, extra_rows = [], []
     for t in cfg["targets"]:
         tid, (start, end) = t["id"], t["domain"]
         seq = read_sequence(cfg, tid)
@@ -55,6 +62,10 @@ def main():
         tdir = cfg["results_dir"] / tid
         eval_dir = tdir / "eval"
         msa_time = json.loads((tdir / "af2/msa/msa_time.json").read_text())["msa_time_s"]
+
+        sup_dir = tdir / "superposition"
+        sup_dir.mkdir(exist_ok=True)
+        shutil.copy(native, sup_dir / "native.pdb")
 
         for depth in map(str, cfg["msa_depths"]):
             run = tdir / f"af2/depth_{depth}"
@@ -77,6 +88,8 @@ def main():
                          "fold_time_raw_s": summary["fold_time_s"],
                          "time_per_model_s": fold / len(summary["models"]),
                          "total_time_s": msa_time + fold, "n_residues_scored": s["n_common"]})
+            if depth == "full":
+                scoring.superpose(s["trimmed_pdb"], native, sup_dir / "af2_full.pdb")
             print(f"{tid} AF2 depth_{depth}: TM {s['tm_score']:.3f}", flush=True)
 
         esm_dir = tdir / "esmfold"
@@ -91,7 +104,21 @@ def main():
                      "msa_time_s": "", "fold_time_s": fold, "fold_time_raw_s": fold,
                      "time_per_model_s": fold, "total_time_s": fold,
                      "n_residues_scored": s["n_common"]})
+        scoring.superpose(s["trimmed_pdb"], native, sup_dir / "esmfold.pdb")
         print(f"{tid} ESMFold: TM {s['tm_score']:.3f}", flush=True)
+
+        for run in sorted((tdir / "af2_all_models").glob("depth_*")):
+            for pdb in sorted(run.glob(f"{tid}_unrelaxed_rank_*.pdb")):
+                rank = int(re.search(r"rank_(\d+)", pdb.name).group(1))
+                model = re.search(r"(alphafold2_ptm_model_\d)", pdb.name).group(1)
+                scores = json.loads(next(run.glob(f"{tid}_scores_rank_{rank:03d}_*.json")).read_text())
+                s = scoring.score(pdb, native, seq, start, end, eval_dir / f"all_models_{run.name}")
+                extra_rows.append({"target": tid, "msa_depth": run.name.replace("depth_", ""),
+                                   "rank": rank, "model": model,
+                                   **{k: s[k] for k in ("tm_score", "gdt_ts", "rmsd", "lddt")},
+                                   "mean_plddt": domain_plddt(scores["plddt"], start, end),
+                                   "ptm": scores["ptm"]})
+            print(f"{tid} all 5 AF2 models scored for {run.name}", flush=True)
 
     # sanity checks: every number in a sensible range
     problems = [f"{r['target']} {r['method']} {r['msa_depth']}: {k}={r[k]}"
@@ -105,6 +132,14 @@ def main():
         for r in rows:
             w.writerow({k: round(v, 4) if isinstance(v, float) else v for k, v in r.items()})
     print(f"Wrote {out} ({len(rows)} rows)")
+    if extra_rows:
+        out = cfg["tables_dir"] / "af2_all_models.csv"
+        with open(out, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(extra_rows[0]))
+            w.writeheader()
+            for r in extra_rows:
+                w.writerow({k: round(v, 4) if isinstance(v, float) else v for k, v in r.items()})
+        print(f"Wrote {out} ({len(extra_rows)} rows)")
     if problems:
         sys.exit("Out-of-range values:\n  " + "\n  ".join(problems))
 

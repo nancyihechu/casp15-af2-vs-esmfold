@@ -18,4 +18,4 @@ export HF_HUB_OFFLINE=1
 export TF_FORCE_UNIFIED_MEMORY=1
 export XLA_PYTHON_CLIENT_MEM_FRACTION=4.0
 nvidia-smi --query-gpu=name --format=csv,noheader
-/cluster/pixstor/dkhf3-lab/users/nancy/envs/p3_tools/bin/python scripts/run_af2.py --index "$SLURM_ARRAY_TASK_ID" ${DEPTHS:+--depths $DEPTHS} ${CONFIG:+--config $CONFIG}
+/cluster/pixstor/dkhf3-lab/users/nancy/envs/p3_tools/bin/python scripts/run_af2.py --index "$SLURM_ARRAY_TASK_ID" ${DEPTHS:+--depths $DEPTHS} ${CONFIG:+--config $CONFIG} ${EXTRA_ARGS}

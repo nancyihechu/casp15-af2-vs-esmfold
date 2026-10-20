@@ -13,6 +13,7 @@ Reads only config/targets.yaml and the .a3m files.
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -27,7 +28,7 @@ FLAGS = ["--model-type", "alphafold2_ptm", "--num-models", "5", "--num-recycle",
          "--random-seed", "0", "--rank", "plddt", "--data", WEIGHTS]
 
 
-def run_depth(tid, depth_dir):
+def run_depth(tid, depth_dir, keep_all_models=False):
     a3m = depth_dir / f"{tid}.a3m"
     # clear outputs from an earlier attempt, keep the input MSA
     for f in depth_dir.iterdir():
@@ -60,6 +61,8 @@ def run_depth(tid, depth_dir):
     # keep the top PDB, all score files and the log; drop the rest (other PDBs, PNGs, duplicates)
     keep = {a3m.name, top_pdb.name, "log.txt", "colabfold_stdout.txt", "config.json"} | \
            {m["scores_file"] for m in models}
+    if keep_all_models:
+        keep |= {f.name for f in depth_dir.glob(f"{tid}_unrelaxed_rank_*.pdb")}
     for f in depth_dir.iterdir():
         if f.name not in keep:
             f.unlink()
@@ -90,6 +93,10 @@ def main():
     ap.add_argument("--target", help="target id")
     ap.add_argument("--index", type=int, help="target index in the config (Slurm array task id)")
     ap.add_argument("--depths", nargs="*", help="default: all depths in the config")
+    ap.add_argument("--af2-dir", default="af2",
+                    help="folder under results/<target>/ (other than af2: the .a3m is copied "
+                         "from af2/depth_<N>/ first)")
+    ap.add_argument("--keep-all-models", action="store_true", help="keep all 5 PDBs, not only rank 1")
     args = ap.parse_args()
     cfg = load_config(args.config)
     tid = args.target or cfg["targets"][args.index]["id"]
@@ -97,7 +104,11 @@ def main():
     failed = []
     for d in depths:
         try:
-            run_depth(tid, cfg["results_dir"] / tid / f"af2/depth_{d}")
+            depth_dir = cfg["results_dir"] / tid / f"{args.af2_dir}/depth_{d}"
+            if args.af2_dir != "af2":
+                depth_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy(cfg["results_dir"] / tid / f"af2/depth_{d}/{tid}.a3m", depth_dir)
+            run_depth(tid, depth_dir, args.keep_all_models)
         except Exception as e:  # keep going with the other depths, report at the end
             print(f"[FAIL] {e}", flush=True)
             failed.append(d)

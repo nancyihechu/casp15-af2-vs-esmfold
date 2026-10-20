@@ -19,6 +19,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import numpy as np
 from Bio.PDB import PDBParser
 from Bio.PDB.Polypeptide import protein_letters_3to1
 
@@ -70,6 +71,25 @@ def tmscore(model_pdb, native_pdb):
             "n_common": int(grab(r"Number of residues in common\s*=\s*(\d+)"))}
 
 
+def superpose(model_pdb, native_pdb, out_pdb):
+    """Write model_pdb moved onto native_pdb with TMscore's own superposition (-m)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        matrix_file = Path(tmp) / "matrix.txt"
+        subprocess.run([TMSCORE, str(model_pdb), str(native_pdb), "-m", str(matrix_file)],
+                       capture_output=True, text=True, check=True)
+        rows = [line.split() for line in matrix_file.read_text().splitlines()
+                if re.match(r"^\s*[012]\s+-?\d", line)][:3]
+    t = np.array([float(r[1]) for r in rows])
+    u = np.array([[float(x) for x in r[2:5]] for r in rows])
+    lines = []
+    for line in Path(model_pdb).read_text().splitlines():
+        if line.startswith("ATOM"):
+            xyz = t + u @ np.array([float(line[30:38]), float(line[38:46]), float(line[46:54])])
+            line = f"{line[:30]}{xyz[0]:8.3f}{xyz[1]:8.3f}{xyz[2]:8.3f}{line[54:]}"
+        lines.append(line)
+    Path(out_pdb).write_text("\n".join(lines) + "\n")
+
+
 def lddt(model_pdb, native_pdb):
     model_pdb, native_pdb = Path(model_pdb).resolve(), Path(native_pdb).resolve()
     with tempfile.TemporaryDirectory() as tmp:
@@ -93,4 +113,4 @@ def score(pred_pdb, native_pdb, target_seq, start, end, workdir):
     workdir.mkdir(parents=True, exist_ok=True)
     trimmed = workdir / (Path(pred_pdb).stem + "_domain.pdb")
     trim_to_domain(pred_pdb, target_seq, start, end, trimmed)
-    return {**tmscore(trimmed, native_pdb), **lddt(trimmed, native_pdb)}
+    return {**tmscore(trimmed, native_pdb), **lddt(trimmed, native_pdb), "trimmed_pdb": trimmed}
