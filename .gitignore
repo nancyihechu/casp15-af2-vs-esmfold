@@ -38,3 +38,6 @@ results/**/eval/
 
 # Slurm job bookkeeping of pipeline.py
 results/**/.jobs/
+
+# Per-panel renders that make up Figure 4 (rebuilt by analyze)
+results/**/fig4_parts/
