@@ -8,7 +8,7 @@ slurm-*.out
 slurm/logs/
 
 # Conda environments, caches and model weights (live on Hellbender, never in the repo)
-envs/
+/envs/
 .conda/
 hf_cache/
 .cache/

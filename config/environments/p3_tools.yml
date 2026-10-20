@@ -1,0 +1,16 @@
+name: p3_tools
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - pyyaml
+  - python=3.11
+  - biopython
+  - pandas
+  - numpy
+  - ipykernel
+  - jupyter
+  - nbconvert
+  - pymol-open-source
+  - scipy
+  - matplotlib

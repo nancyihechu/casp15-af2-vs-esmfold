@@ -1,0 +1,8 @@
+alphafold-colabfold==2.3.6
+colabfold==1.5.5
+dm-haiku==0.0.10
+jax==0.4.34
+jax-cuda12-pjrt==0.4.34
+jax-cuda12-plugin==0.4.34
+jaxlib==0.4.34
+numpy==1.26.4
