@@ -1,0 +1,13 @@
+# One line per target. Domain range uses CASP numbering (inclusive).
+# To add a target, add one line here.
+targets:
+  - {id: T1104, length: 117, domain: [1, 117], pdb: 7roa}
+  - {id: T1122, length: 241, domain: [4, 237], pdb: 8bbt}
+  - {id: T1159, length: 160, domain: [1, 160], pdb: 7pzt}
+  - {id: T1187, length: 166, domain: [3, 166], pdb: 8ad2}
+  - {id: T1194, length: 168, domain: [7, 167], pdb: 8okh}
+  - {id: T1113, length: 193, domain: [1, 192], pdb: 7uyx}
+
+# MSA depth sweep for AlphaFold2 (number of sequences incl. the query; "full" = whole MSA)
+msa_depths: [full, 128, 64, 32, 16, 8, 1]
+random_seed: 0

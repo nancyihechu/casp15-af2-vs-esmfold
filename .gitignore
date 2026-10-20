@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Slurm logs
+slurm-*.out
+slurm/logs/
+
+# Conda environments, caches and model weights (live on Hellbender, never in the repo)
+envs/
+.conda/
+hf_cache/
+.cache/
+colabfold_weights/
+params/
+*.npz
+*.ckpt
+*.pt
+*.safetensors
+
+# Large prediction intermediates
+*.pkl
+*.pickle
+*.tar.gz
+*.zip
+
+# Scratch
+tmp_*/
