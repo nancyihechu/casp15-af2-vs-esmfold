@@ -15,22 +15,22 @@ import subprocess
 import time
 from pathlib import Path
 
-import yaml
+from project import load_config
 
-ROOT = Path(__file__).resolve().parent.parent
 COLABFOLD = "/cluster/pixstor/dkhf3-lab/users/nancy/envs/colabfold/bin/colabfold_batch"
 
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--config", help="default: config/targets.yaml")
     ap.add_argument("--targets", nargs="*", help="default: all targets in the config")
     ap.add_argument("--force", action="store_true", help="redo targets that already have an MSA")
     args = ap.parse_args()
-    cfg = yaml.safe_load((ROOT / "config/targets.yaml").read_text())
+    cfg = load_config(args.config)
     ids = args.targets or [t["id"] for t in cfg["targets"]]
 
     for tid in ids:
-        out_dir = ROOT / f"results/{tid}/af2/msa"
+        out_dir = cfg["results_dir"] / tid / "af2/msa"
         a3m = out_dir / f"{tid}.a3m"
         if a3m.exists() and not args.force:
             print(f"{tid}: MSA exists, skipping")
@@ -40,7 +40,7 @@ def main():
             shutil.rmtree(work)
         work.mkdir(parents=True)
         t0 = time.time()
-        proc = subprocess.run([COLABFOLD, "--msa-only", str(ROOT / f"data/fasta/{tid}.fasta"),
+        proc = subprocess.run([COLABFOLD, "--msa-only", str(cfg["fasta_dir"] / f"{tid}.fasta"),
                                str(work)], capture_output=True, text=True)
         elapsed = time.time() - t0
         (out_dir / "msa_only.log").write_text(proc.stdout + proc.stderr)

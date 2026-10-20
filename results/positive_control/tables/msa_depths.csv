@@ -1,0 +1,2 @@
+target,msa_depth,n_sequences,planned_n_sequences,neff,neff_per_L,log_n_sequences,is_planned_subsample,msa_server_query_in_log,is_duplicate_depth,duplicate_of
+T1147,full,4510,4511,1643.48,15.9561,4510,True,False,False,

@@ -21,12 +21,12 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
-import yaml
 from Bio import Align
 from Bio.PDB import MMCIFParser, PDBParser
 from Bio.PDB.Polypeptide import protein_letters_3to1
 
-ROOT = Path(__file__).resolve().parent.parent
+from project import ROOT, load_config
+
 SEQ_URL = "https://predictioncenter.org/download_area/CASP15/sequences/casp15.seq.txt"
 DOM_URL = ("https://predictioncenter.org/download_area/CASP15/targets/"
            "casp15.targets.TS-domains.public_12.20.2022.tar.gz")
@@ -165,9 +165,9 @@ def check_native(path, target_seq, start, end):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=ROOT / "config/targets.yaml", type=Path)
+    ap.add_argument("--config", help="default: config/targets.yaml")
     args = ap.parse_args()
-    cfg = yaml.safe_load(args.config.read_text())
+    cfg = load_config(args.config)
 
     dl = ROOT / "data/downloads"
     seqs = read_casp_sequences(download(SEQ_URL, dl / "casp15.seq.txt"))
@@ -177,8 +177,8 @@ def main():
         casp_bytes = {name: tf.extractfile(m).read() for name, m in casp_files.items()
                       if any(name == f"{t['id']}-D1.pdb" for t in cfg["targets"])}
 
-    (ROOT / "data/fasta").mkdir(parents=True, exist_ok=True)
-    (ROOT / "data/natives").mkdir(parents=True, exist_ok=True)
+    cfg["fasta_dir"].mkdir(parents=True, exist_ok=True)
+    cfg["natives_dir"].mkdir(parents=True, exist_ok=True)
     rows, ok = [], True
     for t in cfg["targets"]:
         tid, start, end = t["id"], *t["domain"]
@@ -187,9 +187,9 @@ def main():
             print(f"[FAIL] {tid}: not in the CASP15 sequence file"); ok = False; continue
         if len(seq) != t["length"]:
             print(f"[FAIL] {tid}: length {len(seq)} != expected {t['length']}"); ok = False
-        (ROOT / f"data/fasta/{tid}.fasta").write_text(f">{tid}\n{seq}\n")
+        (cfg["fasta_dir"] / f"{tid}.fasta").write_text(f">{tid}\n{seq}\n")
 
-        out = ROOT / f"data/natives/{tid}.pdb"
+        out = cfg["natives_dir"] / f"{tid}.pdb"
         try:
             if f"{tid}-D1.pdb" in casp_bytes:
                 raw = dl / "casp_domains" / f"{tid}-D1.pdb"
@@ -208,7 +208,7 @@ def main():
               + (f", chain identity {ident:.3f}" if ident is not None else ""))
         rows.append(f"{tid}\t{source}\t{chain}\t{start}-{end}\t{n}\t{dom_len}\t{lo}-{hi}")
 
-    (ROOT / "data/natives/sources.tsv").write_text(
+    (cfg["natives_dir"] / "sources.tsv").write_text(
         "target\tsource\tchain\tdomain\tresidues_present\tdomain_length\tobserved_range\n"
         + "\n".join(rows) + "\n")
     sys.exit(0 if ok else 1)

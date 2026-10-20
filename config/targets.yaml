@@ -2,7 +2,7 @@
 # To add a target, add one line here.
 targets:
   - {id: T1104, length: 117, domain: [1, 117], pdb: 7roa}
-  - {id: T1122, length: 241, domain: [4, 237], pdb: 8bbt}
+  - {id: T1122, length: 241, domain: [4, 237], pdb: 8bbt, note: "near-single-sequence case (MSA = query + an identical copy, Neff 1)"}
   - {id: T1159, length: 160, domain: [1, 160], pdb: 7pzt}
   - {id: T1187, length: 166, domain: [3, 166], pdb: 8ad2}
   - {id: T1194, length: 168, domain: [7, 167], pdb: 8okh}

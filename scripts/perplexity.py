@@ -11,6 +11,7 @@ Writes results/<target>/perplexity.json and results/tables/perplexity.csv.
 Reads only config/targets.yaml and data/fasta/.
 """
 
+import argparse
 import csv
 import json
 import math
@@ -18,10 +19,10 @@ import time
 from pathlib import Path
 
 import torch
-import yaml
 from transformers import AutoTokenizer, EsmForMaskedLM
 
-ROOT = Path(__file__).resolve().parent.parent
+from project import load_config, read_sequence
+
 MODEL = "facebook/esm2_t36_3B_UR50D"
 BATCH = 16
 
@@ -42,7 +43,9 @@ def pseudo_perplexity(model, tokenizer, seq):
 
 
 def main():
-    cfg = yaml.safe_load((ROOT / "config/targets.yaml").read_text())
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", help="default: config/targets.yaml")
+    cfg = load_config(ap.parse_args().config)
     assert torch.cuda.is_available(), "No GPU found. Are you on a GPU node?"
     tokenizer = AutoTokenizer.from_pretrained(MODEL)
     model = EsmForMaskedLM.from_pretrained(MODEL, torch_dtype=torch.float16).cuda().eval()
@@ -50,7 +53,7 @@ def main():
     rows = []
     for t in cfg["targets"]:
         tid, (start, end) = t["id"], t["domain"]
-        seq = (ROOT / f"data/fasta/{tid}.fasta").read_text().split("\n", 1)[1].replace("\n", "")
+        seq = read_sequence(cfg, tid)
         t0 = time.time()
         ppl_full, nll_full = pseudo_perplexity(model, tokenizer, seq)
         ppl_dom, nll_dom = pseudo_perplexity(model, tokenizer, seq[start - 1:end])
@@ -60,13 +63,13 @@ def main():
                   "time_s": round(elapsed, 2),
                   "per_residue_nll_full": [round(x, 4) for x in nll_full],
                   "per_residue_nll_domain": [round(x, 4) for x in nll_dom]}
-        (ROOT / f"results/{tid}/perplexity.json").write_text(json.dumps(result, indent=1))
+        (cfg["results_dir"] / tid / "perplexity.json").write_text(json.dumps(result, indent=1))
         rows.append({k: result[k] for k in ("target", "length", "pseudo_perplexity_full",
                                             "pseudo_perplexity_domain", "time_s")})
         print(f"{tid}: pseudo-perplexity full {ppl_full:.3f}, domain {ppl_dom:.3f} ({elapsed:.1f} s)",
               flush=True)
 
-    with open(ROOT / "results/tables/perplexity.csv", "w", newline="") as f:
+    with open(cfg["tables_dir"] / "perplexity.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)

@@ -11,10 +11,11 @@
 # AlphaFold2 (ColabFold) on all MSA depths, one array task per target (index in config/targets.yaml).
 # Usage: sbatch slurm/af2_array.sbatch            (all targets)
 #        sbatch --array=0 slurm/af2_array.sbatch  (first target only)
+#        sbatch --array=0 --export=ALL,CONFIG=config/positive_control.yaml slurm/af2_array.sbatch
 set -euo pipefail
 cd /cluster/pixstor/dkhf3-lab/users/nancy/PROJECT3_TFM
 export HF_HUB_OFFLINE=1
 export TF_FORCE_UNIFIED_MEMORY=1
 export XLA_PYTHON_CLIENT_MEM_FRACTION=4.0
 nvidia-smi --query-gpu=name --format=csv,noheader
-/cluster/pixstor/dkhf3-lab/users/nancy/envs/p3_tools/bin/python scripts/run_af2.py --index "$SLURM_ARRAY_TASK_ID" ${DEPTHS:+--depths $DEPTHS}
+/cluster/pixstor/dkhf3-lab/users/nancy/envs/p3_tools/bin/python scripts/run_af2.py --index "$SLURM_ARRAY_TASK_ID" ${DEPTHS:+--depths $DEPTHS} ${CONFIG:+--config $CONFIG}

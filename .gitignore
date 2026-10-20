@@ -32,3 +32,6 @@ data/downloads/
 # ColabFold score files of models ranked 2-5 (they include full PAE matrices).
 # They stay on disk; their pLDDT/pTM/time are copied into each summary.json.
 results/**/*_scores_rank_00[2-5]_*.json
+
+# Domain-trimmed copies of predictions made by the evaluate step (rebuilt on every run)
+results/**/eval/

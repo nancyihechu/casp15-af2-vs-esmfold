@@ -1,0 +1,9 @@
+# Positive control (not part of the main study): an easy TBM target from Project 2.
+# Shows the AF2/ESMFold install gives high scores when the answer is easy.
+fasta_dir: results/positive_control/data/fasta
+natives_dir: results/positive_control/data/natives
+results_dir: results/positive_control
+targets:
+  - {id: T1147, length: 103, domain: [12, 103], pdb: 8em5}
+msa_depths: [full]
+random_seed: 0

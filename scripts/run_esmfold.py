@@ -9,15 +9,15 @@ Writes, per target, to results/<target>/esmfold/:
 Reads only config/targets.yaml and data/fasta/.
 """
 
+import argparse
 import json
 import time
 from pathlib import Path
 
 import torch
-import yaml
 from transformers import AutoTokenizer, EsmForProteinFolding
 
-ROOT = Path(__file__).resolve().parent.parent
+from project import load_config, read_sequence
 
 
 def fold(model, seq):
@@ -30,7 +30,9 @@ def fold(model, seq):
 
 
 def main():
-    cfg = yaml.safe_load((ROOT / "config/targets.yaml").read_text())
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", help="default: config/targets.yaml")
+    cfg = load_config(ap.parse_args().config)
     assert torch.cuda.is_available(), "No GPU found. Are you on a GPU node?"
     gpu = torch.cuda.get_device_name(0)
     print("GPU:", gpu)
@@ -49,10 +51,10 @@ def main():
 
     for t in cfg["targets"]:
         tid = t["id"]
-        seq = (ROOT / f"data/fasta/{tid}.fasta").read_text().split("\n", 1)[1].replace("\n", "")
+        seq = read_sequence(cfg, tid)
         output, fold_time = fold(model, seq)
 
-        out_dir = ROOT / f"results/{tid}/esmfold"
+        out_dir = cfg["results_dir"] / tid / "esmfold"
         out_dir.mkdir(parents=True, exist_ok=True)
         pdb_file = out_dir / f"{tid}_esmfold.pdb"
         pdb_file.write_text(model.output_to_pdb(output)[0])

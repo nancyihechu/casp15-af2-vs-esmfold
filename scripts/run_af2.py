@@ -18,9 +18,9 @@ import time
 from pathlib import Path
 
 import numpy as np
-import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
+from project import load_config
+
 COLABFOLD = "/cluster/pixstor/dkhf3-lab/users/nancy/envs/colabfold/bin/colabfold_batch"
 WEIGHTS = "/cluster/pixstor/dkhf3-lab/users/nancy/colabfold_weights"
 FLAGS = ["--model-type", "alphafold2_ptm", "--num-models", "5", "--num-recycle", "3",
@@ -86,17 +86,18 @@ def run_depth(tid, depth_dir):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--config", help="default: config/targets.yaml")
     ap.add_argument("--target", help="target id")
     ap.add_argument("--index", type=int, help="target index in the config (Slurm array task id)")
     ap.add_argument("--depths", nargs="*", help="default: all depths in the config")
     args = ap.parse_args()
-    cfg = yaml.safe_load((ROOT / "config/targets.yaml").read_text())
+    cfg = load_config(args.config)
     tid = args.target or cfg["targets"][args.index]["id"]
     depths = args.depths or [str(d) for d in cfg["msa_depths"]]
     failed = []
     for d in depths:
         try:
-            run_depth(tid, ROOT / f"results/{tid}/af2/depth_{d}")
+            run_depth(tid, cfg["results_dir"] / tid / f"af2/depth_{d}")
         except Exception as e:  # keep going with the other depths, report at the end
             print(f"[FAIL] {e}", flush=True)
             failed.append(d)
