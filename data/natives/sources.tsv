@@ -1,0 +1,7 @@
+target	source	chain	domain	residues_present	domain_length	observed_range
+T1104	CASP15 domain file	 	1-117	117	117	1-117
+T1122	RCSB 8bbt	A	4-237	230	234	4-237
+T1159	RCSB 7pzt	A	1-160	160	160	1-160
+T1187	CASP15 domain file	 	3-166	164	164	3-166
+T1194	CASP15 domain file	 	7-167	161	161	7-167
+T1113	RCSB 7uyx	B	1-192	169	192	1-192
