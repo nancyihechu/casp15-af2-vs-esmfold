@@ -8,7 +8,8 @@ Tables (results/tables/):
   confidence_quadrants.csv            runs counted by confident/not x right/wrong
   speed.csv                           accuracy lost vs time saved, per target
   t1122_all_models.csv                all 5 AF2 models of the T1122 full and depth-1 reruns
-Figures (results/figures/): fig1 .. fig6, figS1.
+  af2_plateau.csv                     how much of AF2's MSA gain is reached with <= 8 sequences
+Figures (results/figures/): fig1 .. fig8, figS1.
 Also writes results/summary.md (markdown tables of all of the above) and copies it into
 README.md between the <!-- results:start --> and <!-- results:end --> markers.
 
@@ -43,6 +44,9 @@ PLDDT_BANDS = [(90, 101, "0x0053D6"), (70, 90, "0x65CBF3"), (50, 70, "0xFFDB13")
 SMALL_N_NOTE = "n = 6 targets: |rho| >= 0.89 is needed for p < 0.05"
 # A TM-score margin this small counts as a tie (one seed, one MSA subsample per depth)
 TIE_TM = 0.01
+# Sweep depth used to test whether AF2 levels off ("about 8 sequences", see table_plateau)
+PLATEAU_N = 8
+PC_COLOR = "#9a9893"  # positive control: gray, shown but left out of the statistics
 
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
@@ -68,6 +72,20 @@ def load(config=None):
             "esm": runs[runs.method == "ESMFold"].set_index("target")}
 
 
+def positive_control(d):
+    """T1147 numbers (perplexity, full MSA depth, TM-scores), or None if not computed yet."""
+    base = d["cfg"]["results_dir"] / "positive_control" / "tables"
+    if not (base / "all_runs.csv").exists() or not (base / "perplexity.csv").exists():
+        return None
+    runs = pd.read_csv(base / "all_runs.csv", dtype={"msa_depth": str})
+    a = runs[(runs.method == "AF2") & (runs.msa_depth == "full")].iloc[0]
+    e = runs[runs.method == "ESMFold"].iloc[0]
+    ppl = pd.read_csv(base / "perplexity.csv").set_index("target")
+    return {"target": a.target, "pseudo_perplexity_full": ppl.loc[a.target, "pseudo_perplexity_full"],
+            "full_n_sequences": int(a.n_sequences), "full_neff_per_L": a.neff_per_L,
+            "af2_full_tm": a.tm_score, "esmfold_tm": e.tm_score}
+
+
 def title(d, tid):
     return f"{tid} (near-single-sequence case)" if d["notes"][tid] else tid
 
@@ -88,12 +106,15 @@ def plain_log_axis(ax, ticks, axis="x"):
     target.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
 
 
-def label_points(ax, xs, ys, labels, fontsize=8.5):
-    """Direct labels next to points, moving a label to another side when it would collide."""
+def label_points(ax, xs, ys, labels, fontsize=8.5, gap=0):
+    """Direct labels next to points, moving a label to another side when it would collide.
+    gap = extra distance (points) from the point, for large markers."""
     fig = ax.figure
     fig.canvas.draw()
     placed, char_w, h = [], fontsize * 0.62, fontsize * 1.3
-    offsets = [(6, 4, "left"), (6, -13, "left"), (-6, 4, "right"), (-6, -13, "right"), (6, 14, "left")]
+    g = gap
+    offsets = [(6 + g, 4 + g, "left"), (6 + g, -13 - g, "left"), (-6 - g, 4 + g, "right"),
+               (-6 - g, -13 - g, "right"), (6 + g, 14 + g, "left")]
     for x, y, lab in sorted(zip(xs, ys, labels), key=lambda t: -t[1]):
         px, py = ax.transData.transform((x, y)) * 72 / fig.dpi
         w = len(lab) * char_w
@@ -179,6 +200,8 @@ def table_perplexity(d):
     df["esmfold_tm"] = df.target.map(d["esm"].tm_score)
     df["af2_full_tm"] = df.target.map(d["af2_full"].tm_score)
     df["af2_minus_esmfold_tm"] = df.af2_full_tm - df.esmfold_tm
+    df["full_n_sequences"] = df.target.map(d["af2_full"].n_sequences).astype(int)
+    df["full_neff_per_L"] = df.target.map(d["af2_full"].neff_per_L)
     df["note"] = df.target.map(d["notes"])
     return write_table(d, df, "perplexity_vs_accuracy.csv")
 
@@ -190,6 +213,12 @@ def table_spearman(d):
         for y in ("esmfold_tm", "af2_full_tm", "af2_minus_esmfold_tm"):
             rho, p = spearman_exact(ppl[x], ppl[y])
             rows.append({"x": x, "y": y, "n": len(ppl), "rho": rho, "p_exact": p})
+    # the chain: perplexity -> MSA depth -> AF2 accuracy (full MSA, across targets)
+    for x, y in (("pseudo_perplexity_full", "full_n_sequences"), ("pseudo_perplexity_full", "full_neff_per_L"),
+                 ("full_n_sequences", "af2_full_tm"), ("full_neff_per_L", "af2_full_tm"),
+                 ("full_n_sequences", "esmfold_tm"), ("full_neff_per_L", "esmfold_tm")):
+        rho, p = spearman_exact(ppl[x], ppl[y])
+        rows.append({"x": x, "y": y, "n": len(ppl), "rho": rho, "p_exact": p})
     for method, df in (("AF2 (non-duplicate runs)", d["af2"]), ("ESMFold", d["esm"])):
         rho, p = (spearman_exact(df.mean_plddt, df.tm_score) if len(df) <= 8 else
                   (float(np.corrcoef(rankdata(df.mean_plddt), rankdata(df.tm_score))[0, 1]), np.nan))
@@ -249,6 +278,24 @@ def table_t1122_paired(d):
                         "tm_depth_1": wide["1"].values})
     out["difference"] = out.tm_full_msa - out.tm_depth_1
     return write_table(d, out, "t1122_paired_models.csv")
+
+
+def table_plateau(d):
+    """Share of AF2's gain (1 sequence -> best MSA) already reached with <= PLATEAU_N sequences."""
+    rows = []
+    for tid in d["order"]:
+        af2 = d["af2"][d["af2"].target == tid]
+        one = af2[af2.n_sequences == 1].iloc[0]
+        best = af2.loc[af2.tm_score.idxmax()]
+        few = af2[af2.n_sequences <= PLATEAU_N].sort_values("n_sequences").iloc[-1]
+        gain = best.tm_score - one.tm_score
+        rows.append({"target": tid, "tm_1_seq": one.tm_score, "best_tm": best.tm_score,
+                     "best_n_sequences": int(best.n_sequences), "n_sequences_small": int(few.n_sequences),
+                     "tm_small": few.tm_score, "af2_full_tm": d["af2_full"].loc[tid, "tm_score"],
+                     "share_of_gain_small": (few.tm_score - one.tm_score) / gain if gain > 0 else np.nan,
+                     "rule": f"small = largest non-duplicate MSA with <= {PLATEAU_N} sequences",
+                     "note": d["notes"][tid]})
+    return write_table(d, pd.DataFrame(rows), "af2_plateau.csv")
 
 
 # ---------------------------------------------------------------------- figures
@@ -467,6 +514,83 @@ def fig6(d):
     return save(d, fig, "fig6_accuracy_vs_speed.png")
 
 
+def fig7(d):
+    """ESM-2 perplexity vs full MSA depth: the first link of the chain."""
+    ppl = table_perplexity(d)
+    sp = table_spearman(d).set_index(["x", "y"])
+    pc = positive_control(d)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6))
+    for ax, col, label, ticks in (
+            (axes[0], "full_n_sequences", "Sequences in full MSA (log scale)",
+             [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000]),
+            (axes[1], "full_neff_per_L", "Neff / L of full MSA (log scale)",
+             [0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20])):
+        xs, ys, labels = list(ppl.pseudo_perplexity_full), list(ppl[col]), [short_note(d, t) for t in ppl.target]
+        ax.scatter(xs, ys, s=60, color=INK, edgecolor=SURFACE, lw=2, zorder=3)
+        if pc is not None:
+            ax.scatter(pc["pseudo_perplexity_full"], pc[col], s=60, color=PC_COLOR, edgecolor=SURFACE,
+                       lw=2, zorder=3)
+            xs.append(pc["pseudo_perplexity_full"])
+            ys.append(pc[col])
+            labels.append(f"{pc['target']} (positive control)")
+        ax.set_yscale("log")
+        lo, hi = min(ys) / 2, max(ys) * 3
+        ax.set_ylim(lo, hi)
+        plain_log_axis(ax, [t for t in ticks if lo <= t <= hi], axis="y")
+        ax.set_xlim(3, 20)
+        label_points(ax, xs, ys, labels)
+        rho, p = sp.loc[("pseudo_perplexity_full", col), ["rho", "p_exact"]]
+        ax.set_title(f"Spearman rho = {rho:.2f}, exact p = {p:.3f} (n = {len(ppl)})")
+        ax.set_xlabel("ESM-2 pseudo-perplexity (full sequence)")
+        ax.set_ylabel(label)
+    note = SMALL_N_NOTE + "."
+    if pc is not None:
+        note += f" Gray: positive control {pc['target']}, shown but not in the statistics."
+    fig.text(0.5, -0.04, note, ha="center", fontsize=9, color=INK2)
+    fig.tight_layout()
+    return save(d, fig, "fig7_perplexity_vs_msa_depth.png")
+
+
+def fig8(d):
+    """TM-score vs perplexity for both methods; point size = Neff/L of the full MSA."""
+    ppl = table_perplexity(d)
+    sp = table_spearman(d).set_index(["x", "y"])
+    lo, hi = np.log10(0.002), np.log10(20)
+
+    def size(v):  # marker area grows with log10(Neff/L)
+        return 25 + 330 * (np.clip(np.log10(v), lo, hi) - lo) / (hi - lo)
+    fig, ax = plt.subplots(figsize=(8, 5.2))
+    for r in ppl.itertuples():
+        ax.plot([r.pseudo_perplexity_full] * 2, [r.esmfold_tm, r.af2_full_tm], color=GRID, lw=1.5, zorder=1)
+    for col, color, marker, name in (("af2_full_tm", AF2_COLOR, "o", "AF2, full MSA"),
+                                     ("esmfold_tm", ESM_COLOR, "s", "ESMFold")):
+        rho, p = sp.loc[("pseudo_perplexity_full", col), ["rho", "p_exact"]]
+        ax.scatter(ppl.pseudo_perplexity_full, ppl[col], s=size(ppl.full_neff_per_L), marker=marker,
+                   color=color, alpha=0.85, edgecolor=SURFACE, lw=1.5, zorder=3,
+                   label=f"{name} (rho = {rho:.2f}, p = {p:.2f})")
+    ax.set_xlim(3, 20)
+    ax.set_ylim(0, 1.12)
+    # label above the higher point; when another target is just to the right, label on the left
+    xs = ppl.pseudo_perplexity_full.to_numpy()
+    for x, y, lab in zip(xs, np.maximum(ppl.af2_full_tm, ppl.esmfold_tm), [short_note(d, t) for t in ppl.target]):
+        left = ((xs > x) & (xs - x < 1)).any()
+        ax.annotate(lab, (x, y), xytext=(-12 if left else 12, 10), textcoords="offset points",
+                    ha="right" if left else "left", fontsize=8.5, color=INK2)
+    ax.set_xlabel("ESM-2 pseudo-perplexity (full sequence)")
+    ax.set_ylabel("TM-score to native")
+    ax.set_title("Accuracy vs ESM-2 perplexity (point size = Neff/L of the full MSA)")
+    leg1 = ax.legend(loc="lower left", fontsize=9)
+    ax.add_artist(leg1)
+    handles = [ax.scatter([], [], s=size(v), color=INK2, alpha=0.5, edgecolor="none", label=f"{v:g}")
+               for v in (0.01, 0.1, 1, 10)]
+    ax.legend(handles=handles, title="Neff/L", loc="lower right", fontsize=8.5, title_fontsize=9,
+              labelspacing=1.2, borderpad=0.8)
+    fig.text(0.5, -0.03, SMALL_N_NOTE + ". Gray line joins the two methods on the same target.",
+             ha="center", fontsize=9, color=INK2)
+    fig.tight_layout()
+    return save(d, fig, "fig8_tm_vs_perplexity_neff.png")
+
+
 def figS1(d):
     df = table_t1122_models(d)
     if df is None:
@@ -568,6 +692,52 @@ def findings_md(d):
     return "\n".join(lines)
 
 
+def chain_md(d):
+    """Plain-words paragraph: perplexity -> MSA depth -> AF2 accuracy, with rho for each link."""
+    sp = table_spearman(d).set_index(["x", "y"])
+    plateau = table_plateau(d)
+    pc = positive_control(d)
+
+    def r(x, y):
+        rho, p = sp.loc[(x, y), ["rho", "p_exact"]]
+        return f"rho = {rho:.2f}, p = {p:.3f}"
+    share = plateau.share_of_gain_small.dropna()
+    links = {1: [("pseudo_perplexity_full", "full_n_sequences"), ("pseudo_perplexity_full", "full_neff_per_L")],
+             2: [("full_n_sequences", "af2_full_tm"), ("full_neff_per_L", "af2_full_tm")],
+             3: [("pseudo_perplexity_full", "af2_full_tm"), ("pseudo_perplexity_full", "esmfold_tm")]}
+    passed = [k for k, pairs in links.items() if all(sp.loc[xy, "p_exact"] < 0.05 for xy in pairs)]
+    small_msa = plateau[plateau.best_n_sequences <= PLATEAU_N].target
+    lines = [
+        "### The chain: perplexity, MSA depth and accuracy (Figs. 7 and 8)",
+        "ESM-2 learned from UniRef sequences. A protein with many relatives in UniRef looks familiar to "
+        "it, so it gets a low perplexity. Those same relatives are what the MSA search finds, so they also "
+        "fill AF2's MSA. That links the three things, step by step (Spearman, exact p, "
+        f"n = {len(d['order'])} targets):", "",
+        f"1. **Perplexity to MSA depth:** {r('pseudo_perplexity_full', 'full_n_sequences')} with the number "
+        f"of sequences in the full MSA, and {r('pseudo_perplexity_full', 'full_neff_per_L')} with Neff/L.",
+        f"2. **MSA depth to AF2 accuracy:** {r('full_n_sequences', 'af2_full_tm')} for the number of "
+        f"sequences, and {r('full_neff_per_L', 'af2_full_tm')} for Neff/L (AF2 with the full MSA).",
+        f"3. **Perplexity to accuracy of both models:** {r('pseudo_perplexity_full', 'af2_full_tm')} for "
+        f"AF2 and {r('pseudo_perplexity_full', 'esmfold_tm')} for ESMFold.", "",
+        f"The second link is weakened because AF2 levels off at about {PLATEAU_N} sequences: with "
+        f"{PLATEAU_N} or fewer, AF2 already gets {share.min():.0%}-{share.max():.0%} (median "
+        f"{share.median():.0%}) of its gain from 1 sequence to its best MSA "
+        "(`results/tables/af2_plateau.csv`; for "
+        + ", ".join(short_note(d, t) for t in small_msa)
+        + f" the best run already has {PLATEAU_N} or fewer sequences). Beyond that, a deeper MSA adds "
+        "little, so how deep the full MSA is says less about AF2's accuracy. "
+        + (f"Only link{'s' if len(passed) > 1 else ''} {' and '.join(map(str, passed))} reach"
+           f"{'' if len(passed) > 1 else 'es'} p < 0.05 for both measures. " if passed else
+           "No link reaches p < 0.05. ")
+        + f"{SMALL_N_NOTE}, so read these as hints, not tests."]
+    if pc is not None:
+        lines += ["", f"The positive control {pc['target']} (gray in Fig. 7, not in the statistics) has "
+                  f"perplexity {pc['pseudo_perplexity_full']:.2f}, {pc['full_n_sequences']} sequences in "
+                  f"its MSA (Neff/L {pc['full_neff_per_L']:.2f}), and TM-scores of {pc['af2_full_tm']:.3f} "
+                  f"(AF2) and {pc['esmfold_tm']:.3f} (ESMFold)."]
+    return "\n".join(lines)
+
+
 def summary_md(d):
     """All numbers for the README, taken from the pipeline's own tables."""
     runs, af2_full, esm = d["runs"], d["af2_full"], d["esm"]
@@ -627,8 +797,9 @@ def summary_md(d):
            "Full-MSA verdicts: " + "; ".join(
                f"{name[r.target]}: {r.full_msa_verdict} ({r.full_msa_margin_tm:+.3f})" for r in sm.itertuples()) + ".",
            "",
-           "### ESM-2 perplexity vs accuracy (Spearman, exact permutation p)",
+           "### Spearman correlations across targets (exact permutation p)",
            f"{SMALL_N_NOTE}.", md_table(sp), "",
+           chain_md(d), "",
            "### Confidence vs accuracy (AF2: non-duplicate depth runs)", md_table(quad), "",
            "### Speed (L40S GPU)", md_table(sp_tab, sdig), ""]
     msa_fm = speed.af2_msa_time_s
@@ -676,8 +847,8 @@ def update_readme(d):
 
 
 TABLES = [table_noise, table_smallest_msa, table_perplexity, table_spearman, table_confidence_quadrants,
-          table_speed, table_t1122_models, table_t1122_paired]
-FIGURES = [fig1, fig1b, fig2, fig3, fig4, fig5, fig6, figS1]
+          table_speed, table_t1122_models, table_t1122_paired, table_plateau]
+FIGURES = [fig1, fig1b, fig2, fig3, fig4, fig5, fig6, fig7, fig8, figS1]
 
 
 def main():

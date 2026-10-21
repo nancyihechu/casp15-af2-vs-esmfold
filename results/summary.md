@@ -30,7 +30,7 @@ Duplicate depth runs left out. A margin of 0.01 TM or less counts as a tie: ther
 
 Full-MSA verdicts: T1104: AF2 better (+0.180); T1122 (near-single-seq.): AF2 better (+0.054); T1159: AF2 better (+0.179); T1187: tie (+0.009); T1194: tie (+0.003); T1113: AF2 better (+0.406).
 
-### ESM-2 perplexity vs accuracy (Spearman, exact permutation p)
+### Spearman correlations across targets (exact permutation p)
 n = 6 targets: |rho| >= 0.89 is needed for p < 0.05.
 | x | y | rho | exact p (n = 6) |
 |---|---|---|---|
@@ -40,7 +40,24 @@ n = 6 targets: |rho| >= 0.89 is needed for p < 0.05.
 | pseudo_perplexity_domain | esmfold_tm | -0.543 | 0.297 |
 | pseudo_perplexity_domain | af2_full_tm | -0.486 | 0.356 |
 | pseudo_perplexity_domain | af2_minus_esmfold_tm | 0.143 | 0.803 |
+| pseudo_perplexity_full | full_n_sequences | -0.943 | 0.017 |
+| pseudo_perplexity_full | full_neff_per_L | -1.000 | 0.003 |
+| full_n_sequences | af2_full_tm | 0.600 | 0.242 |
+| full_neff_per_L | af2_full_tm | 0.486 | 0.356 |
+| full_n_sequences | esmfold_tm | 0.600 | 0.242 |
+| full_neff_per_L | esmfold_tm | 0.543 | 0.297 |
 | mean_plddt [ESMFold] | tm_score | 1.000 | 0.003 |
+
+### The chain: perplexity, MSA depth and accuracy (Figs. 7 and 8)
+ESM-2 learned from UniRef sequences. A protein with many relatives in UniRef looks familiar to it, so it gets a low perplexity. Those same relatives are what the MSA search finds, so they also fill AF2's MSA. That links the three things, step by step (Spearman, exact p, n = 6 targets):
+
+1. **Perplexity to MSA depth:** rho = -0.94, p = 0.017 with the number of sequences in the full MSA, and rho = -1.00, p = 0.003 with Neff/L.
+2. **MSA depth to AF2 accuracy:** rho = 0.60, p = 0.242 for the number of sequences, and rho = 0.49, p = 0.356 for Neff/L (AF2 with the full MSA).
+3. **Perplexity to accuracy of both models:** rho = -0.49, p = 0.356 for AF2 and rho = -0.54, p = 0.297 for ESMFold.
+
+The second link is weakened because AF2 levels off at about 8 sequences: with 8 or fewer, AF2 already gets 74%-100% (median 100%) of its gain from 1 sequence to its best MSA (`results/tables/af2_plateau.csv`; for T1122 (near-single-seq.), T1194, T1113 the best run already has 8 or fewer sequences). Beyond that, a deeper MSA adds little, so how deep the full MSA is says less about AF2's accuracy. Only link 1 reaches p < 0.05 for both measures. n = 6 targets: |rho| >= 0.89 is needed for p < 0.05, so read these as hints, not tests.
+
+The positive control T1147 (gray in Fig. 7, not in the statistics) has perplexity 5.93, 4510 sequences in its MSA (Neff/L 15.96), and TM-scores of 0.980 (AF2) and 0.937 (ESMFold).
 
 ### Confidence vs accuracy (AF2: non-duplicate depth runs)
 | method | runs | confident_and_right | confident_but_wrong | unsure_but_right | unsure_and_wrong |

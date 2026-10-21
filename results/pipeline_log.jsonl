@@ -12,3 +12,4 @@
 {"step": "evaluate", "status": "ok", "message": "all_runs.csv: 48 rows OK", "seconds": 140.3, "time": "2026-10-20 17:55:07", "config": "config/targets.yaml"}
 {"step": "analyze", "status": "ok", "message": "7 figures and summary.md OK", "seconds": 36.1, "time": "2026-10-20 17:55:47", "config": "config/targets.yaml"}
 {"step": "report", "status": "ok", "message": "wrote results/report.md", "seconds": 0.0, "time": "2026-10-20 17:55:52", "config": "config/targets.yaml"}
+{"step": "analyze", "status": "ok", "message": "9 main figures + 1 supplementary and summary.md OK", "seconds": 52.8, "time": "2026-10-21 14:19:49", "config": "config/targets.yaml"}

@@ -1,7 +1,7 @@
-target,pseudo_perplexity_full,pseudo_perplexity_domain,esmfold_tm,af2_full_tm,af2_minus_esmfold_tm,note
-T1104,5.7,5.7,0.7526,0.9326,0.18,
-T1122,17.61,17.87,0.4436,0.4978,0.0542,"near-single-sequence case (MSA = query + an identical copy, Neff 1)"
-T1159,9.903,9.903,0.803,0.9817,0.1787,
-T1187,5.328,5.423,0.9277,0.9369,0.0092,
-T1194,10.24,11.44,0.9849,0.9879,0.003,
-T1113,16.37,16.4,0.2501,0.6557,0.4056,
+target,pseudo_perplexity_full,pseudo_perplexity_domain,esmfold_tm,af2_full_tm,af2_minus_esmfold_tm,full_n_sequences,full_neff_per_L,note
+T1104,5.7,5.7,0.7526,0.9326,0.18,93,0.4056,
+T1122,17.61,17.87,0.4436,0.4978,0.0542,2,0.0041,"near-single-sequence case (MSA = query + an identical copy, Neff 1)"
+T1159,9.903,9.903,0.803,0.9817,0.1787,172,0.3872,
+T1187,5.328,5.423,0.9277,0.9369,0.0092,3507,12.73,
+T1194,10.24,11.44,0.9849,0.9879,0.003,20,0.0774,
+T1113,16.37,16.4,0.2501,0.6557,0.4056,7,0.0259,

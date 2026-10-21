@@ -38,7 +38,7 @@ STEPS = ["collect", "msa", "sweep", "af2", "esmfold", "perplexity", "evaluate", 
 STILL_RUNNING = 3
 FIGURES = ["fig1_tm_vs_n_sequences.png", "fig1b_tm_vs_neff_per_L.png", "fig2_perplexity_vs_tm.png",
            "fig3_confidence_vs_accuracy.png", "fig4_structures.png", "fig5_pae.png",
-           "fig6_accuracy_vs_speed.png"]
+           "fig6_accuracy_vs_speed.png", "fig7_perplexity_vs_msa_depth.png", "fig8_tm_vs_perplexity_neff.png"]
 
 
 class StepFailed(Exception):

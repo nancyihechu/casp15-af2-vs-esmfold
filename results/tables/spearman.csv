@@ -5,5 +5,11 @@ pseudo_perplexity_full,af2_minus_esmfold_tm,6,0.1429,0.8028,n = 6 targets: |rho|
 pseudo_perplexity_domain,esmfold_tm,6,-0.5429,0.2972,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
 pseudo_perplexity_domain,af2_full_tm,6,-0.4857,0.3556,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
 pseudo_perplexity_domain,af2_minus_esmfold_tm,6,0.1429,0.8028,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+pseudo_perplexity_full,full_n_sequences,6,-0.9429,0.01667,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+pseudo_perplexity_full,full_neff_per_L,6,-1,0.002778,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+full_n_sequences,af2_full_tm,6,0.6,0.2417,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+full_neff_per_L,af2_full_tm,6,0.4857,0.3556,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+full_n_sequences,esmfold_tm,6,0.6,0.2417,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
+full_neff_per_L,esmfold_tm,6,0.5429,0.2972,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05
 mean_plddt [AF2 (non-duplicate runs)],tm_score,28,0.913,,"runs share targets, so they are not independent; no p-value"
 mean_plddt [ESMFold],tm_score,6,1,0.002778,n = 6 targets: |rho| >= 0.89 is needed for p < 0.05

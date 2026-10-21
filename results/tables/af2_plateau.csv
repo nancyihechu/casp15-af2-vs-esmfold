@@ -1,0 +1,7 @@
+target,tm_1_seq,best_tm,best_n_sequences,n_sequences_small,tm_small,af2_full_tm,share_of_gain_small,rule,note
+T1104,0.6024,0.9523,63,8,0.8604,0.9326,0.7374,small = largest non-duplicate MSA with <= 8 sequences,
+T1122,0.3682,0.4978,2,2,0.4978,0.4978,1,small = largest non-duplicate MSA with <= 8 sequences,"near-single-sequence case (MSA = query + an identical copy, Neff 1)"
+T1159,0.2162,0.9826,128,8,0.9772,0.9817,0.993,small = largest non-duplicate MSA with <= 8 sequences,
+T1187,0.4325,0.9369,3507,8,0.8274,0.9369,0.7829,small = largest non-duplicate MSA with <= 8 sequences,
+T1194,0.2523,0.9884,8,8,0.9884,0.9879,1,small = largest non-duplicate MSA with <= 8 sequences,
+T1113,0.3403,0.6557,7,7,0.6557,0.6557,1,small = largest non-duplicate MSA with <= 8 sequences,
