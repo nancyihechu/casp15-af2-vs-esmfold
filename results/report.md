@@ -1,23 +1,23 @@
 # Pipeline report
 
-Generated 2026-10-21 14:24 by `python pipeline.py report`.
+Generated 2026-10-21 15:12 by `python pipeline.py report`.
 
 ## Step status (last run of each step)
 
 | step | status | when | time (s) | message |
 |---|---|---|---|---|
-| collect | ok | 2026-10-21 14:21:01 | 2 | 6 sequences and natives OK |
-| msa | ok | 2026-10-21 14:21:04 | 0 | MSAs OK (raw server sequence counts, query listed twice: T1104:94, T1122:3, T1159:173, T1187:3508, T1194:21, T1113:8) |
-| sweep | ok | 2026-10-21 14:21:08 | 0 | skipped: AF2 already ran on these depth files (use --force, then af2 --force) |
-| af2 | ok | 2026-10-21 14:21:10 | 0 | 42 AF2 runs OK (already complete) |
-| esmfold | ok | 2026-10-21 14:21:12 | 0 | 6 ESMFold runs OK (already complete) |
-| perplexity | ok | 2026-10-21 14:21:13 | 0 | 6 perplexities OK (already complete) |
-| evaluate | ok | 2026-10-21 14:23:31 | 135 | all_runs.csv: 48 rows OK |
-| analyze | ok | 2026-10-21 14:24:12 | 38 | 9 main figures + 1 supplementary and summary.md OK |
+| collect | ok | 2026-10-21 15:07:34 | 2 | 6 sequences and natives OK |
+| msa | ok | 2026-10-21 15:07:36 | 0 | MSAs OK (raw server sequence counts, query listed twice; not what AF2 used, see evaluate: T1104:94, T1122:3, T1159:173, T1187:3508, T1194:21, T1113:8) |
+| sweep | ok | 2026-10-21 15:07:38 | 0 | skipped: AF2 already ran on these depth files (use --force, then af2 --force) |
+| af2 | ok | 2026-10-21 15:07:40 | 0 | 42 AF2 runs OK (already complete) |
+| esmfold | ok | 2026-10-21 15:07:41 | 0 | 6 ESMFold runs OK (already complete) |
+| perplexity | ok | 2026-10-21 15:07:43 | 0 | 6 perplexities OK (already complete) |
+| evaluate | ok | 2026-10-21 15:09:41 | 116 | all_runs.csv: 48 rows OK; full-MSA sequences AF2 used (msa_depths.csv): T1104:93, T1122:2, T1159:172, T1187:3507, T1194:20, T1113:7 |
+| analyze | ok | 2026-10-21 15:12:25 | 161 | 9 main figures + 1 supplementary and summary.md OK |
 
 ## Notes from the agent
 
-All eight steps (collect, msa, sweep, af2, esmfold, perplexity, evaluate, analyze) returned [OK] on the first try; none were retried and none failed. sweep, af2, esmfold and perplexity skipped their work because the outputs already existed (sweep: 'AF2 already ran on these depth files'; af2: 42 runs already complete). Several MSAs are very shallow (raw server counts T1122:3, T1113:8, T1194:21), so for T1113 every AF2 depth from full down to 8 gives the same TM of 0.656, which is expected because subsampling cannot change an MSA that small. T1194 reaches TM 0.988 at depth 8 with only 21 sequences, and ESMFold reaches 0.985; that is surprisingly high for an FM target and could point to template or training-set leakage. The T1113 native covers only 169 of 192 domain residues, and ESMFold on T1113 scores just 0.250.
+All eight steps (collect, msa, sweep, af2, esmfold, perplexity, evaluate, analyze) printed [OK] on the first attempt; none were retried and none failed. sweep, af2, esmfold and perplexity reused existing outputs: sweep printed 'skipped: AF2 already ran on these depth files', af2 printed '42 AF2 runs OK (already complete)', esmfold '6 ESMFold runs OK (already complete)', and perplexity '6 perplexities OK (already complete)'. evaluate printed the full-MSA sequence counts AF2 used (msa_depths.csv): T1104:93, T1122:2, T1159:172, T1187:3507, T1194:20, T1113:7. T1194 has 20 sequences, yet AF2 printed TM 0.988 at depth_full, depth_128, depth_64, depth_32 and depth_8 (0.985 at depth_16), compared with 0.252 at depth_1 and 0.985 for ESMFold. T1113 printed an identical AF2 TM of 0.656 from depth_full down to depth_8, 0.340 at depth_1, and 0.250 for ESMFold. The evaluate output shown in this run was truncated ('27 earlier lines not shown'), so the per-run TM scores for T1104, T1122 and T1159 do not appear here.
 
 ## Results
 

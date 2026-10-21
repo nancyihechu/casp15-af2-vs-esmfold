@@ -146,7 +146,8 @@ def check_msa(cfg):
         in_range(info["msa_time_s"], 0, 3600, f"{tid} msa_time_s")
         in_range(info["n_sequences"], 1, 10**7, f"{tid} n_sequences")
         out.append(f"{tid}:{info['n_sequences']}")
-    return "MSAs OK (raw server sequence counts, query listed twice: " + ", ".join(out) + ")"
+    return ("MSAs OK (raw server sequence counts, query listed twice; not what AF2 used, see evaluate: "
+            + ", ".join(out) + ")")
 
 
 def a3m_paths(cfg):
@@ -216,12 +217,19 @@ def check_evaluate(cfg):
         in_range(float(r["lddt"]), 0, 1, f"{tag} lddt")
         in_range(float(r["gdt_ts"]), 0, 100, f"{tag} gdt_ts")
         in_range(float(r["total_time_s"]), 0, 7200, f"{tag} total_time_s")
-    return f"all_runs.csv: {len(rows)} rows OK"
+    used = {r["target"]: r["n_sequences"] for r in csv.DictReader((cfg["tables_dir"] / "msa_depths.csv").open())
+            if r["msa_depth"] == "full"}
+    return (f"all_runs.csv: {len(rows)} rows OK; full-MSA sequences AF2 used (msa_depths.csv): "
+            + ", ".join(f"{t}:{used[t]}" for t in ids(cfg)))
 
 
-def check_analyze(cfg):
+def check_analyze(cfg, since=None):
     figs = [cfg["results_dir"] / "figures" / f for f in FIGURES]
     require(figs + [cfg["results_dir"] / "summary.md"], "analysis outputs")
+    if since is not None:  # every output must come from this run, not an earlier one
+        old = [f.name for f in figs + [cfg["results_dir"] / "summary.md"] if f.stat().st_mtime < since]
+        if old:
+            raise StepFailed(f"not rewritten by this run (older files left over): {old}")
     small = [f.name for f in figs if f.stat().st_size < 10_000]
     if small:
         raise StepFailed(f"figures look empty: {small}")
@@ -296,8 +304,9 @@ def step_evaluate(cfg, args):
 def step_analyze(cfg, args):
     check_evaluate(cfg)
     check_perplexity(cfg)
+    start = time.time()
     run([PY, "scripts/analyze.py", *cfg_args(args)])
-    return check_analyze(cfg)
+    return check_analyze(cfg, since=start)
 
 
 def last_status(cfg):

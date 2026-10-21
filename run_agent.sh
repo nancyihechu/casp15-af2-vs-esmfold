@@ -44,6 +44,12 @@ At the end, always run:
   $PIPE report$CFG_ARG --notes \"<your notes>\"
 where your notes are 2-6 plain sentences: which steps passed, which were retried and why,
 which failed (quote the [FAILED] message), and anything in the [OK] messages that looks odd.
+Rules for the notes:
+- State only facts that pipeline.py printed in this run. Copy numbers exactly as printed.
+- For MSA sizes, use the sequence counts AF2 actually used, which the evaluate step prints
+  from msa_depths.csv. Never quote the raw server counts from the msa step.
+- Do not guess at causes or explanations (for example leakage, templates, training data or
+  bugs). If something looks odd, say what was printed and leave the explanation to a human.
 Then reply with a short summary of the run."
 
 echo "Agent log: $LOG_DIR/agent_$STAMP.jsonl"

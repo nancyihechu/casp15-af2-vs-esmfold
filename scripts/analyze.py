@@ -21,6 +21,7 @@ Usage: python scripts/analyze.py [--config ...]   (notebooks/analysis.ipynb call
 import argparse
 import itertools
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -400,9 +401,8 @@ def fig3(d):
     return save(d, fig, "fig3_confidence_vs_accuracy.png")
 
 
-def render_structure(d, tid, model, out_png):
+def render_structure(cmd, d, tid, model, out_png):
     """PyMOL: native domain in gray, one model on top colored by pLDDT (AlphaFold DB bands)."""
-    from pymol import cmd
     sup = d["cfg"]["results_dir"] / tid / "superposition"
     cmd.reinitialize()
     cmd.load(str(sup / "native.pdb"), "native")
@@ -423,15 +423,18 @@ def render_structure(d, tid, model, out_png):
 
 
 def fig4(d):
-    import pymol
-    pymol.finish_launching(["pymol", "-qc"])
+    # an in-process PyMOL session: errors raise normally (finish_launching ran PyMOL in a
+    # thread, where a crash could still end the script with exit code 0)
+    import pymol2
+    pymol = pymol2.PyMOL()
+    pymol.start()
     parts = d["cfg"]["results_dir"] / "figures" / "fig4_parts"
     parts.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(len(d["order"]), 2, figsize=(8, 3.3 * len(d["order"])))
     for row, tid in zip(axes, d["order"]):
         for ax, model, name in ((row[0], "af2_full", "AF2 (full MSA)"), (row[1], "esmfold", "ESMFold")):
             png = parts / f"{tid}_{model}.png"
-            render_structure(d, tid, model, png)
+            render_structure(pymol.cmd, d, tid, model, png)
             ax.imshow(plt.imread(png))
             ax.axis("off")
             tm = (d["af2_full"] if model == "af2_full" else d["esm"]).loc[tid, "tm_score"]
@@ -440,6 +443,7 @@ def fig4(d):
                for (_, _, c), lab in zip(PLDDT_BANDS, ["pLDDT > 90", "70-90", "50-70", "< 50"])]
     handles.append(plt.Line2D([], [], marker="s", ls="", ms=10, color="#b3b3b3", label="native (gray)"))
     fig.legend(handles=handles, loc="lower center", ncol=5, fontsize=9, bbox_to_anchor=(0.5, -0.01))
+    pymol.stop()
     fig.suptitle("Models superposed on the native FM domain (TMscore superposition)", y=1.0)
     fig.tight_layout(rect=(0, 0.02, 1, 1))
     return save(d, fig, "fig4_structures.png")
@@ -867,4 +871,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BaseException:
+        import os
+        import traceback
+        sys.stdout.flush()  # earlier output first, so the error is the last thing printed
+        traceback.print_exc()
+        sys.stderr.flush()
+        os._exit(1)  # hard exit, so no library exit hook can turn a failure into exit code 0
