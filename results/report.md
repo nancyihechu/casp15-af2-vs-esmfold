@@ -1,23 +1,23 @@
 # Pipeline report
 
-Generated 2026-10-20 17:55 by `python pipeline.py report`.
+Generated 2026-10-21 14:24 by `python pipeline.py report`.
 
 ## Step status (last run of each step)
 
 | step | status | when | time (s) | message |
 |---|---|---|---|---|
-| collect | ok | 2026-10-20 17:52:35 | 2 | 6 sequences and natives OK |
-| msa | ok | 2026-10-20 17:52:37 | 0 | MSAs OK (T1104:94, T1122:3, T1159:173, T1187:3508, T1194:21, T1113:8) |
-| sweep | ok | 2026-10-20 17:52:39 | 0 | skipped: AF2 already ran on these depth files (use --force, then af2 --force) |
-| af2 | ok | 2026-10-20 17:52:40 | 0 | 42 AF2 runs OK (already complete) |
-| esmfold | ok | 2026-10-20 17:52:42 | 0 | 6 ESMFold runs OK (already complete) |
-| perplexity | ok | 2026-10-20 17:52:45 | 0 | 6 perplexities OK (already complete) |
-| evaluate | ok | 2026-10-20 17:55:07 | 140 | all_runs.csv: 48 rows OK |
-| analyze | ok | 2026-10-20 17:55:47 | 36 | 7 figures and summary.md OK |
+| collect | ok | 2026-10-21 14:21:01 | 2 | 6 sequences and natives OK |
+| msa | ok | 2026-10-21 14:21:04 | 0 | MSAs OK (raw server sequence counts, query listed twice: T1104:94, T1122:3, T1159:173, T1187:3508, T1194:21, T1113:8) |
+| sweep | ok | 2026-10-21 14:21:08 | 0 | skipped: AF2 already ran on these depth files (use --force, then af2 --force) |
+| af2 | ok | 2026-10-21 14:21:10 | 0 | 42 AF2 runs OK (already complete) |
+| esmfold | ok | 2026-10-21 14:21:12 | 0 | 6 ESMFold runs OK (already complete) |
+| perplexity | ok | 2026-10-21 14:21:13 | 0 | 6 perplexities OK (already complete) |
+| evaluate | ok | 2026-10-21 14:23:31 | 135 | all_runs.csv: 48 rows OK |
+| analyze | ok | 2026-10-21 14:24:12 | 38 | 9 main figures + 1 supplementary and summary.md OK |
 
 ## Notes from the agent
 
-All eight steps (collect, msa, sweep, af2, esmfold, perplexity, evaluate, analyze) returned [OK] on the first try; none needed a retry and none failed. sweep, af2, esmfold and perplexity reused existing outputs ('already complete'), and sweep says it skipped because AF2 had already run on the depth files. Some MSAs are very shallow (T1122: 3 sequences, T1113: 8, T1194: 21), so for T1113 every AF2 depth from 8 to full gives the same TM-score (0.656); ESMFold scores much lower on T1113 (TM 0.250). In collect, T1113's native covers only 169 of its 192 domain residues. The evaluate console output starts at T1187 depth_128 and does not show T1187 depth_full or the other targets, though all_runs.csv reports 48 rows. analyze's [OK] message says 7 figures, but it wrote 8 (including figS1_T1122_all_models.png).
+All eight steps (collect, msa, sweep, af2, esmfold, perplexity, evaluate, analyze) returned [OK] on the first try; none were retried and none failed. sweep, af2, esmfold and perplexity skipped their work because the outputs already existed (sweep: 'AF2 already ran on these depth files'; af2: 42 runs already complete). Several MSAs are very shallow (raw server counts T1122:3, T1113:8, T1194:21), so for T1113 every AF2 depth from full down to 8 gives the same TM of 0.656, which is expected because subsampling cannot change an MSA that small. T1194 reaches TM 0.988 at depth 8 with only 21 sequences, and ESMFold reaches 0.985; that is surprisingly high for an FM target and could point to template or training-set leakage. The T1113 native covers only 169 of 192 domain residues, and ESMFold on T1113 scores just 0.250.
 
 ## Results
 
@@ -53,7 +53,7 @@ Duplicate depth runs left out. A margin of 0.01 TM or less counts as a tie: ther
 
 Full-MSA verdicts: T1104: AF2 better (+0.180); T1122 (near-single-seq.): AF2 better (+0.054); T1159: AF2 better (+0.179); T1187: tie (+0.009); T1194: tie (+0.003); T1113: AF2 better (+0.406).
 
-### ESM-2 perplexity vs accuracy (Spearman, exact permutation p)
+### Spearman correlations across targets (exact permutation p)
 n = 6 targets: |rho| >= 0.89 is needed for p < 0.05.
 | x | y | rho | exact p (n = 6) |
 |---|---|---|---|
@@ -63,7 +63,24 @@ n = 6 targets: |rho| >= 0.89 is needed for p < 0.05.
 | pseudo_perplexity_domain | esmfold_tm | -0.543 | 0.297 |
 | pseudo_perplexity_domain | af2_full_tm | -0.486 | 0.356 |
 | pseudo_perplexity_domain | af2_minus_esmfold_tm | 0.143 | 0.803 |
+| pseudo_perplexity_full | full_n_sequences | -0.943 | 0.017 |
+| pseudo_perplexity_full | full_neff_per_L | -1.000 | 0.003 |
+| full_n_sequences | af2_full_tm | 0.600 | 0.242 |
+| full_neff_per_L | af2_full_tm | 0.486 | 0.356 |
+| full_n_sequences | esmfold_tm | 0.600 | 0.242 |
+| full_neff_per_L | esmfold_tm | 0.543 | 0.297 |
 | mean_plddt [ESMFold] | tm_score | 1.000 | 0.003 |
+
+### The chain: perplexity, MSA depth and accuracy (Figs. 7 and 8)
+ESM-2 learned from UniRef sequences. A protein with many relatives in UniRef looks familiar to it, so it gets a low perplexity. Those same relatives are what the MSA search finds, so they also fill AF2's MSA. That links the three things, step by step (Spearman, exact p, n = 6 targets):
+
+1. **Perplexity to MSA depth:** rho = -0.94, p = 0.017 with the number of sequences in the full MSA, and rho = -1.00, p = 0.003 with Neff/L.
+2. **MSA depth to AF2 accuracy:** rho = 0.60, p = 0.242 for the number of sequences, and rho = 0.49, p = 0.356 for Neff/L (AF2 with the full MSA).
+3. **Perplexity to accuracy of both models:** rho = -0.49, p = 0.356 for AF2 and rho = -0.54, p = 0.297 for ESMFold.
+
+The second link is weakened because AF2 levels off at about 8 sequences: with 8 or fewer, AF2 already gets 74%-100% (median 100%) of its gain from 1 sequence to its best MSA (`results/tables/af2_plateau.csv`; for T1122 (near-single-seq.), T1194, T1113 the best run already has 8 or fewer sequences). Beyond that, a deeper MSA adds little, so how deep the full MSA is says less about AF2's accuracy. Only link 1 reaches p < 0.05 for both measures. n = 6 targets: |rho| >= 0.89 is needed for p < 0.05, so read these as hints, not tests.
+
+The positive control T1147 (gray in Fig. 7, not in the statistics) has perplexity 5.93, 4510 sequences in its MSA (Neff/L 15.96), and TM-scores of 0.980 (AF2) and 0.937 (ESMFold).
 
 ### Confidence vs accuracy (AF2: non-duplicate depth runs)
 | method | runs | confident_and_right | confident_but_wrong | unsure_but_right | unsure_and_wrong |
